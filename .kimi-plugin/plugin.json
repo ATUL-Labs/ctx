@@ -1,0 +1,8 @@
+{
+  "name": "ctx",
+  "version": "1.0.0",
+  "description": "Universal coding companion - reasoning, efficient code, design intelligence, project memory, crash recovery.",
+  "sessionStart": {
+    "skill": "using-ctx"
+  }
+}

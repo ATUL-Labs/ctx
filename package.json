@@ -1,0 +1,31 @@
+{
+  "name": "@atul-labs/ctx",
+  "version": "0.1.0",
+  "description": "Universal coding companion - reasoning, efficient code, design intelligence, project memory, crash recovery.",
+  "author": "pulak-ranjan (https://github.com/pulak-ranjan)",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ATUL-Labs/ctx.git"
+  },
+  "homepage": "https://github.com/ATUL-Labs/ctx",
+  "keywords": [
+    "ai",
+    "coding",
+    "companion",
+    "skills",
+    "reasoning",
+    "tdd",
+    "debugging",
+    "memory",
+    "context",
+    "design",
+    "efficiency",
+    "claude",
+    "codex",
+    "cursor",
+    "windsurf",
+    "gemini",
+    "antigravity"
+  ]
+}

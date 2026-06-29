@@ -1,0 +1,11 @@
+{
+  "name": "ctx",
+  "version": "0.1.0",
+  "description": "Universal coding companion - reasoning, efficient code, design intelligence, project memory, crash recovery.",
+  "author": {
+    "name": "pulak-ranjan",
+    "url": "https://github.com/pulak-ranjan"
+  },
+  "license": "Apache-2.0",
+  "contextFileName": "ANTIGRAVITY.md"
+}

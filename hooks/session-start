@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SKILL_FILE="$PLUGIN_ROOT/skills/using-ctx/SKILL.md"
+
+if [ ! -f "$SKILL_FILE" ]; then
+    echo '{}'
+    exit 0
+fi
+
+CONTENT="$(cat "$SKILL_FILE")"
+
+WRAPPED="<EXTREMELY_IMPORTANT>
+You have ctx - the universal coding companion.
+
+Below is the full content of your 'using-ctx' skill - your bootstrap for all skills. For all other skills, use the Skill tool:
+
+---
+$CONTENT
+</EXTREMELY_IMPORTANT>"
+
+ESCAPED="$(printf '%s' "$WRAPPED" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))' 2>/dev/null || printf '%s' "$WRAPPED" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g' | awk '{printf "%s\\n", $0}')"
+
+if [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then
+    printf '{"additional_context": %s}' "$ESCAPED"
+elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -z "${COPILOT_CLI:-}" ]; then
+    printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":%s}}' "$ESCAPED"
+else
+    printf '{"additionalContext": %s}' "$ESCAPED"
+fi

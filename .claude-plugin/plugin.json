@@ -1,0 +1,20 @@
+{
+  "name": "ctx",
+  "description": "Universal coding companion - reasoning, efficient code, design intelligence, project memory, crash recovery. Replaces superpowers + ponytail + ui-ux-pro-max.",
+  "version": "0.1.0",
+  "author": {
+    "name": "pulak-ranjan",
+    "url": "https://github.com/pulak-ranjan"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "skills",
+    "reasoning",
+    "tdd",
+    "debugging",
+    "memory",
+    "context",
+    "design",
+    "efficiency"
+  ]
+}

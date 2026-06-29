@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "sessionStart": {
+    "command": "./hooks/run-hook.cmd session-start"
+  }
+}
