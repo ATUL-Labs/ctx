@@ -4,7 +4,7 @@ process.removeAllListeners('warning');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
-const { openDb, openDbAt, refresh, refreshDocs, updateFile } = require('../lib/indexer');
+const { openDb, openDbAt, refresh, refreshDocs, updateFile, ftsRows } = require('../lib/indexer');
 const { normalizeUrl } = require('../lib/extract');
 
 function findRoot(from) {
@@ -15,17 +15,6 @@ function findRoot(from) {
     if (up === dir) return null;
     dir = up;
   }
-}
-
-function quoted(terms) {
-  return terms.map(t => '"' + t.replace(/"/g, '') + '"');
-}
-
-function ftsRows(db, terms, limit) {
-  const sql = "SELECT path, snippet(content_fts, 1, '[', ']', '...', 8) AS snip FROM content_fts WHERE content_fts MATCH ? ORDER BY rank LIMIT " + limit;
-  let rows = db.prepare(sql).all(quoted(terms).join(' '));
-  if (!rows.length && terms.length > 1) rows = db.prepare(sql).all(quoted(terms).join(' OR '));
-  return rows;
 }
 
 function docsCmd(args) {
@@ -78,8 +67,14 @@ function main() {
     if (!rows.length) process.stdout.write('no links match ' + url + '\n');
   } else if (cmd === 'update' && args[0]) {
     updateFile(db, root, path.relative(root, path.resolve(root, args[0])));
+  } else if (cmd === 'serve') {
+    const port = parseInt(args[0], 10) || 4747;
+    require('../lib/serve').createServer(root).listen(port, '127.0.0.1', () => {
+      process.stdout.write('ctx viewer: http://127.0.0.1:' + port + '\n');
+    });
+    return;
   } else {
-    process.stderr.write('usage: ctx <refresh|search <terms>|symbols <file>|links <url>|docs [terms]|update <file>|hook-update>\n');
+    process.stderr.write('usage: ctx <refresh|search <terms>|symbols <file>|links <url>|docs [terms]|update <file>|serve [port]|hook-update>\n');
     process.exit(1);
   }
 }

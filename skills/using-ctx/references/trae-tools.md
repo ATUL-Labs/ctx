@@ -9,7 +9,7 @@ Builder mode agent tools.
 | Write a new file | Trae builder file-write tool |
 | Edit an existing file | Trae builder file-edit tool |
 | Run a shell command | Trae's integrated terminal |
-| Search file contents | Trae workspace search, or `node <ctx>/bin/ctx.js search` when Node is available |
+| Search file contents | Trae workspace search, or `node <ctx-repo>/bin/ctx.js search` when Node is available |
 | Find files by name | Trae workspace search |
 | Invoke a skill | Read the SKILL.md file directly via the builder file-read tool |
 | Dispatch a subagent | Not available - do the work inline in the main session |

@@ -18,7 +18,7 @@ Run these checks after installing ctx on each platform. Five minutes per platfor
 4. Session start: bootstrap + CURRENT PROJECT STATE section appear injected
    (ask: "what did your session-start context contain?").
 
-5. Edit any file, then query `node <ctx>/bin/ctx.js search <new symbol>` -
+5. Edit any file, then query `node <ctx-repo>/bin/ctx.js search <new symbol>` -
    the PostToolUse hook must have indexed it already (zero manual refresh).
 
 6. Run /compact, then continue working - the agent must resume silently from

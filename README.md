@@ -16,6 +16,7 @@ One plugin replaces superpowers + ponytail + ui-ux-pro-max. Works on any coding 
 - **Continuity engine**: three-layer state protection - step-cadence `wip.md` checkpoints, deliberate flush at ~80% context pressure, PreCompact/SessionStart hooks on Claude Code. Sessions survive compaction, crashes, and agent handoffs
 - **ctx-index**: self-maintaining SQLite index (zero tokens to maintain) - `search`, `symbols`, and API-to-frontend `links` via one CLI call; auto-updated by a PostToolUse hook on Claude Code, lazily refreshed everywhere else
 - **Docs cache**: global self-building cheatsheets (`~/.ctx/docs/`) - agents check distilled, version-verified API notes before guessing from training data; searchable via `ctx docs <term>`
+- **Live viewer**: `ctx serve` opens a local mission-control page - live status, wip task list, knowledge pages, audit trail, index stats, search, and an API-to-frontend link map. Read-only, localhost-only, zero dependencies
 - **Agent audit**: who did what, when, which model, which platform
 - **Zero dependencies**: pure markdown files, no runtime, no build step
 
@@ -116,9 +117,23 @@ node <ctx-repo>/bin/ctx.js symbols src/App.tsx       # symbol list without readi
 node <ctx-repo>/bin/ctx.js links dashboard/tasks     # route + every frontend consumer
 node <ctx-repo>/bin/ctx.js docs <term>              # search global distilled docs cache
 node <ctx-repo>/bin/ctx.js refresh                   # manual reindex (rarely needed)
+node <ctx-repo>/bin/ctx.js serve [port]              # live viewer at 127.0.0.1:4747
 ```
 
 Large legacy folders: list path prefixes in `.ctx/ignore` (one per line) to exclude them from indexing.
+
+---
+
+## Viewer
+
+The live viewer opens a mission-control dashboard at `http://127.0.0.1:4747` to monitor your project in real time:
+
+```bash
+node <ctx-repo>/bin/ctx.js serve        # defaults to port 4747
+node <ctx-repo>/bin/ctx.js serve 3000   # custom port
+```
+
+Shows live status (project name, agent activity, version), the current task list from `wip.md`, all knowledge pages, the audit trail of actions, index statistics, and full-text search. Includes an interactive API-to-frontend link map. The viewer is read-only and localhost-bound - it never modifies your project.
 
 ---
 
@@ -216,6 +231,7 @@ All skills are in `skills/`. Each is a standalone SKILL.md that any agent can re
 | **code-review** | After writing code | Quality, security, correctness review |
 | **efficient-code** | Always active | YAGNI, shortest diff, no bloat |
 | **design-intelligence** | Any UI/frontend work | Intentional design, never template-looking |
+| **docs-cache** | Agents at session start | Global distilled API docs, version-verified |
 | **subagent-dispatch** | 2+ independent tasks | Parallel agent execution |
 | **finishing-branch** | Before merge/PR | PR creation, merge, cleanup workflow |
 | **context-health** | Init, maintenance, overflow | Manage .ctx/, compress, prevent overflow |
@@ -286,6 +302,7 @@ ctx/
     code-review/SKILL.md
     efficient-code/SKILL.md
     design-intelligence/SKILL.md
+    docs-cache/SKILL.md
     subagent-dispatch/SKILL.md
     finishing-branch/SKILL.md
     context-health/SKILL.md
