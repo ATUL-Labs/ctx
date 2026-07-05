@@ -386,7 +386,7 @@ ctx/
 ## Acknowledgments
 
 - Cross-platform plugin delivery pattern (hooks, manifests, session-start bootstrap) inspired by [superpowers](https://github.com/obra/superpowers) by Jesse Vincent (MIT)
-- Efficient code ladder inspired by [ponytail](https://github.com/obra/superpowers) - the lazy senior dev approach to writing less code
+- Efficient code ladder inspired by [ponytail](https://github.com/DietrichGebert/ponytail) - the lazy senior dev approach to writing less code
 - Token optimization concepts informed by [sipcode](https://github.com/Anuj7411/sipcode) - context window efficiency for AI coding agents
 
 All skill content is original.
