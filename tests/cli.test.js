@@ -22,6 +22,10 @@ function run(root, args, input) {
   return execFileSync('node', [CLI, ...args], { cwd: root, input, encoding: 'utf8' });
 }
 
+function runDocs(cwd, args, env) {
+  return execFileSync('node', [CLI, ...args], { cwd, encoding: 'utf8', env: { ...process.env, ...env } });
+}
+
 test('search finds content and stays within 10 lines', () => {
   const root = makeProject();
   const out = run(root, ['search', 'moveTask']);
@@ -39,6 +43,16 @@ test('symbols lists a file, links connects route to consumer', () => {
   assert.match(links, /consumer\s+patch\s+\/dashboard\/tasks\/\*\s+src\/Tasks\.tsx:1/);
 });
 
+test('links accepts slashless form (immune to Git Bash path mangling)', () => {
+  const root = makeProject();
+  run(root, ['refresh']);
+  const withSlash = run(root, ['links', '/dashboard/tasks/{task}']);
+  const slashless = run(root, ['links', 'dashboard/tasks/{task}']);
+  assert.equal(slashless, withSlash);
+  assert.match(slashless, /route\s+patch\s+\/dashboard\/tasks\/\*\s+routes\/web\.php:2/);
+  assert.match(slashless, /consumer\s+patch\s+\/dashboard\/tasks\/\*\s+src\/Tasks\.tsx:1/);
+});
+
 test('no .ctx folder: polite exit 1', () => {
   const bare = fs.mkdtempSync(path.join(os.tmpdir(), 'ctxbare-'));
   assert.throws(() => run(bare, ['search', 'anything']), (e) => e.status === 1 && /no \.ctx folder/.test(e.stderr));
@@ -53,4 +67,31 @@ test('hook-update indexes the written file and always exits 0', () => {
   assert.equal(out.trim(), '{}');
   assert.match(run(root, ['search', 'brandNewThing']), /src\/fresh\.ts/);
   assert.equal(run(root, ['hook-update'], 'not json at all').trim(), '{}');
+});
+
+test('docs command searches the global cache via env-overridden dirs', () => {
+  const docsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ctxdocs-cli-'));
+  const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ctxdocsdb-'));
+  fs.mkdirSync(path.join(docsDir, 'laravel-12'), { recursive: true });
+  fs.writeFileSync(path.join(docsDir, 'laravel-12', 'eloquent.md'), '# Eloquent\nscopeOrdered requires grouped orWhere closures\n');
+  const env = { CTX_DOCS_DIR: docsDir, CTX_DOCS_DB: path.join(dbDir, 'docs.db') };
+  const anyCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'ctxanywhere-'));
+  const out = runDocs(anyCwd, ['docs', 'orWhere'], env);
+  assert.match(out, /laravel-12\/eloquent\.md/);
+  const list = runDocs(anyCwd, ['docs'], env);
+  assert.match(list, /laravel-12\/eloquent\.md/);
+});
+
+test('docs command without a cache dir exits 0 with guidance', () => {
+  const missing = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ctxnone-')), 'docs');
+  const env = { CTX_DOCS_DIR: missing, CTX_DOCS_DB: missing + '.db' };
+  const out = runDocs(process.cwd(), ['docs', 'anything'], env);
+  assert.match(out, /no docs cache yet/);
+});
+
+test('multi-term search falls back to OR when AND has no hits', () => {
+  const root = makeProject();
+  run(root, ['refresh']);
+  const out = run(root, ['search', 'moveTask', 'zzznonexistenttermzzz']);
+  assert.match(out, /src\/Tasks\.tsx/);
 });

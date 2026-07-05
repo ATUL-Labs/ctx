@@ -41,6 +41,8 @@ Every session, before ANY response:
    f. Only then: the minimum code that works.
 8. Does this match the project's patterns? (check `patterns.md` if loaded)
 9. If UI: is this intentional design or template-looking? Never boring. Never what every AI generates.
+10. Unfamiliar or version-sensitive API? Invoke the docs-cache skill: check
+    `ctx docs <term>` before writing the call, fetch-and-distill on miss.
 
 ## Code Output Rules
 
@@ -98,8 +100,12 @@ The plugin ships a self-maintaining SQLite index (`.ctx/index.db`, regenerable,
 gitignored). When node is available, prefer one index query over grep-and-read chains:
 
 - Where is something: `node "<plugin-root>/bin/ctx.js" search <terms>` (10 lines max)
+- Search terms are ANDed - prefer one distinctive term over several common ones.
 - What is in a file: `node "<plugin-root>/bin/ctx.js" symbols <file>` (skip reading whole files)
-- What talks to a route: `node "<plugin-root>/bin/ctx.js" links <url>` (backend route + frontend consumers)
+- What talks to a route: `node "<plugin-root>/bin/ctx.js" links dashboard/tasks` (backend route + frontend consumers; slashless form avoids Git Bash path mangling on Windows)
+- Stack docs: `node "<plugin-root>/bin/ctx.js" docs <term>` searches the global
+  distilled docs cache (~/.ctx/docs/), built up by the docs-cache skill.
+- Large legacy folders: list path prefixes in `.ctx/ignore` (one per line) to exclude them from indexing.
 
 On Claude Code, `<plugin-root>` is `${CLAUDE_PLUGIN_ROOT}`; a PostToolUse hook keeps
 the index fresh automatically. On other platforms the index lazily refreshes on every
@@ -231,6 +237,7 @@ Invoke these via your platform's skill tool when they apply. If no skill tool ex
 | executing | Have a plan, need to execute it | After planning is complete |
 | tdd | Implementing a feature or fix | Before writing implementation code |
 | debugging | Bug, test failure, unexpected behavior | Before proposing fixes |
+| docs-cache | Unfamiliar or version-sensitive API | Before writing calls against it |
 | verification | About to claim work is done | Before committing or saying "done" |
 | code-review | Code was written or modified | After writing code, before merge |
 | efficient-code | Writing any code | Always active - shortest diff, YAGNI |

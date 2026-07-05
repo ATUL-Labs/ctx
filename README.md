@@ -15,6 +15,7 @@ One plugin replaces superpowers + ponytail + ui-ux-pro-max. Works on any coding 
 - **Smart loading**: index-then-load - reads ~80 lines on start, pulls knowledge on demand
 - **Continuity engine**: three-layer state protection - step-cadence `wip.md` checkpoints, deliberate flush at ~80% context pressure, PreCompact/SessionStart hooks on Claude Code. Sessions survive compaction, crashes, and agent handoffs
 - **ctx-index**: self-maintaining SQLite index (zero tokens to maintain) - `search`, `symbols`, and API-to-frontend `links` via one CLI call; auto-updated by a PostToolUse hook on Claude Code, lazily refreshed everywhere else
+- **Docs cache**: global self-building cheatsheets (`~/.ctx/docs/`) - agents check distilled, version-verified API notes before guessing from training data; searchable via `ctx docs <term>`
 - **Agent audit**: who did what, when, which model, which platform
 - **Zero dependencies**: pure markdown files, no runtime, no build step
 
@@ -77,17 +78,6 @@ The agent reads `CLAUDE.md` / `AGENTS.md` / `GEMINI.md` at session start - these
 
 If the agent can read files, ctx works. Point it at `skills/using-ctx/SKILL.md` - that single file teaches the agent the full protocol. No install mechanism required.
 
-## CLI
-
-Requires Node 22+. From anywhere inside a ctx project:
-
-```bash
-node <ctx-repo>/bin/ctx.js search userTask overdue   # full-text, 10 lines max
-node <ctx-repo>/bin/ctx.js symbols src/App.tsx       # symbol list without reading the file
-node <ctx-repo>/bin/ctx.js links /dashboard/tasks    # route + every frontend consumer
-node <ctx-repo>/bin/ctx.js refresh                   # manual reindex (rarely needed)
-```
-
 ### 2. Initialize a project
 
 In any project, tell your agent:
@@ -113,6 +103,22 @@ The plugin activates automatically every session. The agent will:
 - Check for `wip.md` (crash recovery from interrupted sessions)
 - Load only the knowledge pages relevant to the current task
 - Track work in progress, log actions, and update knowledge after completing work
+
+---
+
+## CLI
+
+Requires Node 22+. From anywhere inside a ctx project:
+
+```bash
+node <ctx-repo>/bin/ctx.js search userTask overdue   # full-text, 10 lines max
+node <ctx-repo>/bin/ctx.js symbols src/App.tsx       # symbol list without reading the file
+node <ctx-repo>/bin/ctx.js links dashboard/tasks     # route + every frontend consumer
+node <ctx-repo>/bin/ctx.js docs <term>              # search global distilled docs cache
+node <ctx-repo>/bin/ctx.js refresh                   # manual reindex (rarely needed)
+```
+
+Large legacy folders: list path prefixes in `.ctx/ignore` (one per line) to exclude them from indexing.
 
 ---
 

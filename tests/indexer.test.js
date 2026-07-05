@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
-const { openDb, refresh, updateFile } = require('../lib/indexer');
+const { openDb, openDbAt, refresh, refreshDocs, updateFile } = require('../lib/indexer');
 
 function makeProject() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ctxidx-'));
@@ -67,6 +67,21 @@ test('updateFile indexes one changed file and removes a gone file', () => {
   assert.equal(updateFile(db, root, 'logo.png'), false);
 });
 
+test('.ctx/ignore excludes listed path prefixes from refresh and updateFile', () => {
+  const root = makeProject();
+  fs.mkdirSync(path.join(root, 'legacy'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'legacy-utils'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'legacy', 'big.js'), 'function old() {}\n');
+  fs.writeFileSync(path.join(root, 'legacy-utils', 'ok.js'), 'function ok() {}\n');
+  fs.writeFileSync(path.join(root, '.ctx', 'ignore'), '# comment\nlegacy\n');
+  const db = openDb(root);
+  const r = refresh(db, root);
+  const paths = db.prepare('SELECT path FROM files ORDER BY path').all().map(x => x.path);
+  assert.ok(!paths.includes('legacy/big.js'));
+  assert.ok(paths.includes('legacy-utils/ok.js'));
+  assert.equal(updateFile(db, root, 'legacy/big.js'), false);
+});
+
 test('updateFile rejects paths outside the project root', () => {
   const root = makeProject();
   const db = openDb(root);
@@ -77,4 +92,29 @@ test('updateFile rejects paths outside the project root', () => {
   assert.equal(updateFile(db, root, relEscape), false);
   assert.equal(updateFile(db, root, path.join(outside, 'secret.js')), false);
   assert.equal(db.prepare("SELECT COUNT(*) c FROM content_fts WHERE content_fts MATCH 'LEAKED_SECRET'").get().c, 0);
+});
+
+test('refreshDocs indexes md sheets recursively with docs-relative paths', () => {
+  const docsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ctxdocs-'));
+  fs.mkdirSync(path.join(docsDir, 'laravel-12'), { recursive: true });
+  fs.writeFileSync(path.join(docsDir, 'laravel-12', 'eloquent.md'), '# Eloquent - Laravel 12\nscopeOrdered gotcha: DOCS_MARKER_ELOQUENT\n');
+  fs.writeFileSync(path.join(docsDir, 'notes.txt'), 'not a sheet, must be skipped\n');
+  const db = openDbAt(path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ctxdb-')), 'docs.db'));
+  const r = refreshDocs(db, docsDir);
+  assert.equal(r.indexed, 1);
+  const hit = db.prepare("SELECT path FROM content_fts WHERE content_fts MATCH 'DOCS_MARKER_ELOQUENT'").get();
+  assert.equal(hit.path, 'laravel-12/eloquent.md');
+  assert.equal(db.prepare('SELECT COUNT(*) c FROM files').get().c, 1);
+});
+
+test('refreshDocs is incremental and sweeps deleted sheets', () => {
+  const docsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ctxdocs2-'));
+  fs.writeFileSync(path.join(docsDir, 'react-19.md'), '# React 19\nuseActionState signature\n');
+  const db = openDbAt(path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ctxdb2-')), 'docs.db'));
+  refreshDocs(db, docsDir);
+  assert.equal(refreshDocs(db, docsDir).indexed, 0);
+  fs.rmSync(path.join(docsDir, 'react-19.md'));
+  const r = refreshDocs(db, docsDir);
+  assert.equal(r.removed, 1);
+  assert.equal(db.prepare('SELECT COUNT(*) c FROM files').get().c, 0);
 });

@@ -10,6 +10,9 @@ test('isTextFile accepts code and md, rejects binaries and minified', () => {
   assert.equal(isTextFile('logo.png'), false);
   assert.equal(isTextFile('vendor.min.js'), false);
   assert.equal(isTextFile('Makefile'), false);
+  assert.equal(isTextFile('page.html'), false);
+  assert.equal(isTextFile('dump.sql'), false);
+  assert.equal(isTextFile('export.json'), false);
 });
 
 test('shouldSkipDir skips heavy dirs', () => {
