@@ -33,6 +33,16 @@ For each finding:
 
 Severity: CRITICAL (must fix), IMPORTANT (should fix), MINOR (nice to have)
 
+## Fix-and-Re-Review Loop
+
+CRITICAL and IMPORTANT findings are not suggestions:
+1. Fix them
+2. Re-review the fix itself (fresh eyes on the fix diff)
+3. Repeat until a review pass returns no CRITICAL or IMPORTANT findings
+4. Only then report the work as clean
+
+Verify fixes against the actual code, never against the claim that they were fixed.
+
 ## Rules
 
 - Technical rigor over politeness. If something is wrong, say so directly

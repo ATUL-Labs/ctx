@@ -14,7 +14,9 @@ Every session, before ANY response:
 1. Check if `.ctx/` folder exists in the project root
    - YES: Read `.ctx/status.md` (~30 lines). Check if `.ctx/wip.md` exists (crash recovery).
    - NO: This is a new project. Offer to run `/context-health` to initialize.
-2. If `wip.md` exists: the previous session was interrupted. Show the user what was in progress. Ask: resume or start fresh?
+2. If `wip.md` exists after a compaction in the SAME conversation: continue silently.
+   If it exists on a COLD start (new conversation): show the user what was in
+   progress in 2-3 lines. Ask: resume or start fresh?
 3. Scan `.ctx/INDEX.md` to know what knowledge exists. Do NOT load knowledge pages yet.
 
 ## Before Any Task
@@ -72,9 +74,23 @@ These rules reduce token consumption on every agent:
 - mistakes.md tells you what failed. Don't repeat the investigation.
 - If you learned something this session, add it to wip.md so you don't re-derive it later in the same session.
 
-### Session compression
-- If context grows long and the agent/platform supports compaction, write current state to wip.md BEFORE compaction so nothing is lost.
-- After compaction: re-read status.md + wip.md to restore context.
+### Continuity protocol (three layers)
+
+Layer 1 - ambient: update wip.md after EVERY significant step (file written, decision
+made, test run). State on disk must never be more than one step old.
+
+Layer 2 - deliberate: the moment you notice context pressure (low-context system
+warnings, platform usage indicators around 80%), STOP and flush before continuing:
+current step and remaining steps to wip.md, any unrecorded decisions to pages/.
+Do not wait for compaction to happen to you.
+
+Layer 3 - backstop (hook platforms): a PreCompact hook logs the event to audit.log,
+and the SessionStart hook re-injects this bootstrap plus CURRENT PROJECT STATE
+(status.md) and INTERRUPTED WORK (wip.md) after compaction automatically.
+
+After ANY compaction or context loss: state was already rehydrated or is one read
+away (status.md + wip.md). CONTINUE the work silently from the current step. Do not
+ask the user to re-explain. Do not re-derive what the files already say.
 
 ## During Work
 

@@ -7,6 +7,20 @@ description: Test-driven development. Use when implementing any feature or fix. 
 
 Red-green-refactor. Every time.
 
+<HARD-GATE>
+If implementation code exists before its failing test, DELETE the implementation and
+start from the test. Keeping it "since it's already written" defeats the cycle.
+</HARD-GATE>
+
+## Red Flags - Stop If You Think This
+
+| Thought | Reality |
+|---|---|
+| "I'll write tests after, to save time" | Untested code is rework waiting to happen |
+| "Too trivial to test" | Trivial code breaks too. It's a 30-second test |
+| "The test obviously passes" | Run it anyway. Surprises live exactly here |
+| "I'll just verify manually this once" | Manual checks do not survive the next change |
+
 ## Process
 
 1. **RED** - Write a test that describes the desired behavior. Run it. It must FAIL.

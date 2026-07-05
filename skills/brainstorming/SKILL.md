@@ -8,6 +8,21 @@ argument-hint: "[topic]"
 
 Turn ideas into designs through collaborative dialogue. No code until the design is approved.
 
+<HARD-GATE>
+No code, no file edits, no scaffolding until the user approves the design. This
+applies to EVERY task regardless of perceived simplicity. "Simple" projects are
+where unexamined assumptions waste the most work.
+</HARD-GATE>
+
+## Red Flags - Stop If You Think This
+
+| Thought | Reality |
+|---|---|
+| "Too simple to need a design" | Simple things grow complex. A 3-sentence design costs nothing |
+| "I'll prototype while we talk" | Prototypes become the product. Design first |
+| "The user clearly knows what they want" | Then approval takes one message. Ask anyway |
+| "I need to write code to explore" | Reading code is fine. Writing it is not |
+
 ## Process
 
 1. **Understand context** - check `.ctx/status.md`, recent sessions, project patterns

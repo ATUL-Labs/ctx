@@ -13,7 +13,7 @@ One plugin replaces superpowers + ponytail + ui-ux-pro-max. Works on any coding 
 - **Design intelligence**: never boring UI, intentional design choices
 - **Project memory**: `.ctx/` folder with compressed conversations, knowledge pages, page-index tree
 - **Smart loading**: index-then-load - reads ~80 lines on start, pulls knowledge on demand
-- **Crash recovery**: `wip.md` tracks in-progress work, any agent can resume after disconnection
+- **Continuity engine**: three-layer state protection - step-cadence `wip.md` checkpoints, deliberate flush at ~80% context pressure, PreCompact/SessionStart hooks on Claude Code. Sessions survive compaction, crashes, and agent handoffs
 - **Agent audit**: who did what, when, which model, which platform
 - **Zero dependencies**: pure markdown files, no runtime, no build step
 
@@ -45,6 +45,15 @@ Add to your Cursor extensions - the `.cursor-plugin/plugin.json` is auto-detecte
 
 **Windsurf:**
 The `AGENTS.md` file is auto-detected when the plugin is installed.
+
+**Trae:**
+
+Trae has no plugin system. Copy the ctx rules file into your project:
+
+```bash
+mkdir -p .trae/rules
+cp <ctx-repo>/templates/platform/trae-rules.md .trae/rules/project_rules.md
+```
 
 #### Option B: Install per-project (drop into codebase)
 

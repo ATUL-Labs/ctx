@@ -28,3 +28,9 @@ Work through a plan task by task with verification at each step.
 - Update `.ctx/wip.md` after EVERY task (crash recovery)
 - If blocked on a task, log the blocker and move to the next unblocked task
 - After completion: update `.ctx/status.md`, write session summary, delete `wip.md`
+
+## Checklist Discipline
+
+Before executing a plan: create one tracked task per plan task (platform todo/task
+tool if available, otherwise a checklist in wip.md). Mark in_progress when starting,
+completed only when its verification step passed. Never batch-complete items.

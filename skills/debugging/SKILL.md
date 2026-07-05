@@ -7,6 +7,20 @@ description: Systematic debugging. Use when encountering any bug, test failure, 
 
 Find the root cause. Do not guess.
 
+<HARD-GATE>
+No fix may be written before the root cause is stated in one sentence: "the bug is X
+because Y". If you cannot say it, you are still investigating, not fixing.
+</HARD-GATE>
+
+## Red Flags - Stop If You Think This
+
+| Thought | Reality |
+|---|---|
+| "Let me just try changing X" | Guess-and-check hides causes and burns sessions |
+| "A null check will stop the crash" | It hides the symptom. Find WHY it is null |
+| "It's probably the framework/library" | It is almost never the framework |
+| "I'll wrap it in try/catch for now" | Silencing an error is not fixing it |
+
 ## Process
 
 1. **Reproduce** - confirm the bug exists. Get the exact error message, stack trace, or unexpected output

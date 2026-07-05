@@ -7,6 +7,20 @@ description: Verify work before claiming it is done. Use before committing, crea
 
 Evidence before assertions. Run it, check it, then claim it.
 
+<HARD-GATE>
+Every claim of "done", "fixed", "passing", or "working" MUST be preceded in the same
+response by the command output that proves it. No output shown, no claim made.
+</HARD-GATE>
+
+## Claim -> Required Evidence
+
+| Claim | Evidence |
+|---|---|
+| Tests pass | Full-suite output with counts, run this session |
+| It builds | Build command completing with exit 0, this session |
+| Bug is fixed | The previously failing scenario shown passing |
+| UI works | Screenshot or snapshot, or explicit "not visually verified" |
+
 ## Process
 
 1. **Run tests** - the full test suite, not just the new tests. Check for regressions

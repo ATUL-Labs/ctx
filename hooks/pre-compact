@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -u
+if [ -d ".ctx" ]; then
+    printf '%s | claude-code | PreCompact | context compaction\n' "$(date '+%Y-%m-%d %H:%M')" >> ".ctx/audit.log" 2>/dev/null || true
+fi
+echo '{}'
