@@ -5,6 +5,16 @@ All notable changes to ctx. Format loosely follows [Keep a Changelog](https://ke
 ## [Unreleased]
 
 ### Added
+- **Schema canvas focus mode** - click a table to spotlight it: the table, its FK
+  neighbors, and their connecting lines stay lit while everything else dims. Click
+  another table to move focus, click empty canvas (or the same table) to clear.
+  Dragging is unaffected (sub-5px pointer movement counts as a click).
+- **Stack-matched MCP suggestions** - new `/api/mcps` endpoint scans project manifests
+  (package.json, composer.json, requirements.txt, pyproject.toml, go.mod, Dockerfile,
+  CI workflows) two levels deep and maps detected tech to specific MCP servers
+  (Laravel → laravel-boost, Postgres → Postgres MCP, Snowflake → Snowflake MCP, ...).
+  Shown as chips in the viewer's Codebase panel; the using-ctx skill now tells agents
+  to prefer the stack-matching MCP over generic shell probing ("tool focus").
 - File preview renders `.md` files as formatted markdown by default (headings, lists,
   checkboxes, code fences, frontmatter chips) using the existing viewer renderer, with a
   `raw`/`rendered` toggle per pane. Clicking an outline symbol switches to raw view and

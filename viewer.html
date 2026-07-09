@@ -526,6 +526,16 @@
 
   .drawer-mdview { overflow: auto; padding: 12px 18px; }
   .drawer-code li.drawer-more { list-style: none; padding: 10px 14px; }
+
+  .mcp-suggest { margin-top: 12px; }
+  .mcp-suggest-label { font-family: var(--mono); font-size: 10.5px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .mcp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .mcp-chip { font-family: var(--mono); font-size: 10.5px; color: var(--ink); background: rgba(77,227,255,0.06); border: 1px solid var(--panel-border); border-radius: 999px; padding: 3px 10px; cursor: default; }
+  .mcp-chip b { color: var(--accent); font-weight: 600; }
+
+  .schema-world svg path.dim-line { opacity: 0.06; }
+  .schema-world svg path.hi-line { stroke: var(--accent); opacity: 0.95; stroke-width: 2; }
+  .schema-world .schema-card.neighbor { box-shadow: 0 0 0 1px rgba(77,227,255,0.45); }
   .pane-btn.active { color: var(--accent); border-color: var(--accent); }
 
   .pane-actions { display: flex; gap: 6px; flex: none; }
@@ -583,6 +593,10 @@
     </div>
     <input class="search-box" id="search-input" type="text" placeholder="search codebase and pages...">
     <div class="search-results" id="search-results"></div>
+    <div class="mcp-suggest" id="mcp-suggest" style="display:none">
+      <div class="mcp-suggest-label">suggested MCPs for this stack</div>
+      <div class="mcp-chips" id="mcp-chips"></div>
+    </div>
   </section>
 
   <section class="panel panel-graph fade-up" style="animation-delay:100ms">
@@ -1313,10 +1327,42 @@ function canvasDrawLines(tables) {
       path.setAttribute('stroke', 'rgba(77,227,255,0.3)');
       path.setAttribute('stroke-width', '1.5');
       path.setAttribute('fill', 'none');
+      path.dataset.a = t.name;
+      path.dataset.b = c.fkTable;
       svg.appendChild(path);
     });
   });
   canvas.worldEl.insertBefore(svg, canvas.worldEl.firstChild);
+  applySelection();
+}
+
+// ---------- table selection: focus one table + its FK neighbors ----------
+function selectTable(name) {
+  canvas.selected = canvas.selected === name ? null : name;
+  applySelection();
+}
+
+function applySelection() {
+  var sel = canvas.selected;
+  var neighbors = {};
+  if (sel) {
+    neighbors[sel] = true;
+    canvas.worldEl.querySelectorAll('svg path').forEach(function (p) {
+      if (p.dataset.a === sel) neighbors[p.dataset.b] = true;
+      if (p.dataset.b === sel) neighbors[p.dataset.a] = true;
+    });
+  }
+  canvas.worldEl.querySelectorAll('.schema-card').forEach(function (card) {
+    var t = card.dataset.table;
+    card.classList.toggle('focus', sel === t);
+    card.classList.toggle('neighbor', !!sel && t !== sel && !!neighbors[t]);
+    card.classList.toggle('dim', !!sel && !neighbors[t]);
+  });
+  canvas.worldEl.querySelectorAll('svg path').forEach(function (p) {
+    var touches = sel && (p.dataset.a === sel || p.dataset.b === sel);
+    p.classList.toggle('hi-line', !!touches);
+    p.classList.toggle('dim-line', !!sel && !touches);
+  });
 }
 
 function canvasMountCards(tables) {
@@ -1366,7 +1412,9 @@ function enableCardDrag(card, name, tables) {
     var startX = e.clientX, startY = e.clientY;
     var orig = canvas.pos[name];
     var lineRedrawQueued = false;
+    var maxMove = 0;
     function move(ev) {
+      maxMove = Math.max(maxMove, Math.abs(ev.clientX - startX), Math.abs(ev.clientY - startY));
       canvas.pos[name] = {
         x: orig.x + (ev.clientX - startX) / canvas.view.s,
         y: orig.y + (ev.clientY - startY) / canvas.view.s,
@@ -1385,6 +1433,14 @@ function enableCardDrag(card, name, tables) {
     function up() {
       card.removeEventListener('pointermove', move);
       card.removeEventListener('pointerup', up);
+      if (maxMove < 5) {
+        // a click, not a drag: toggle focus on this table
+        canvas.pos[name] = orig;
+        card.style.left = orig.x + 'px';
+        card.style.top = orig.y + 'px';
+        selectTable(name);
+        return;
+      }
       canvasDrawLines(tables);
       var saved = {};
       try { saved = JSON.parse(localStorage.getItem(POS_KEY) || '{}'); } catch {}
@@ -1401,7 +1457,9 @@ canvas.viewportEl.addEventListener('pointerdown', function (e) {
   try { canvas.viewportEl.setPointerCapture(e.pointerId); } catch {}
   var startX = e.clientX, startY = e.clientY;
   var origX = canvas.view.x, origY = canvas.view.y;
+  var maxMove = 0;
   function move(ev) {
+    maxMove = Math.max(maxMove, Math.abs(ev.clientX - startX), Math.abs(ev.clientY - startY));
     canvas.view.x = origX + ev.clientX - startX;
     canvas.view.y = origY + ev.clientY - startY;
     canvasApply();
@@ -1410,6 +1468,7 @@ canvas.viewportEl.addEventListener('pointerdown', function (e) {
     canvas.viewportEl.classList.remove('panning');
     canvas.viewportEl.removeEventListener('pointermove', move);
     canvas.viewportEl.removeEventListener('pointerup', up);
+    if (maxMove < 5 && canvas.selected) selectTable(canvas.selected); // click empty canvas clears focus
   }
   canvas.viewportEl.addEventListener('pointermove', move);
   canvas.viewportEl.addEventListener('pointerup', up);
@@ -1464,6 +1523,25 @@ function closeSchemaCanvas() {
 
 qs('schema-expand').addEventListener('click', openSchemaCanvas);
 qs('schema-overlay-close').addEventListener('click', closeSchemaCanvas);
+
+// ---------- MCP suggestions (stack-matched, static map, fetched once) ----------
+fetch('/api/mcps')
+  .then(function (r) { return r.json(); })
+  .then(function (data) {
+    var rows = data.rows || [];
+    if (!rows.length) return;
+    var host = qs('mcp-chips');
+    rows.forEach(function (row) {
+      var chip = textEl('span', null, 'mcp-chip');
+      var b = document.createElement('b');
+      b.textContent = row.tech;
+      chip.appendChild(b);
+      chip.appendChild(document.createTextNode(' → ' + row.mcp));
+      host.appendChild(chip);
+    });
+    qs('mcp-suggest').style.display = '';
+  })
+  .catch(function () {});
 
 // ---------- memory tabs ----------
 document.querySelectorAll('.tab-btn').forEach(function (btn) {

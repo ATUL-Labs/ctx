@@ -78,6 +78,14 @@ These rules reduce token consumption on every agent:
 - mistakes.md tells you what failed. Don't repeat the investigation.
 - If you learned something this session, add it to wip.md so you don't re-derive it later in the same session.
 
+### Tool focus
+Use the tool that matches the stack, not the generic one. If an MCP server matching
+the project's stack is connected (Postgres/MySQL MCP for DB questions, Playwright MCP
+for E2E, Stripe MCP for payments, GitHub MCP for PRs/CI), prefer it over shell probing
+or guessing. The viewer's `/api/mcps` endpoint lists stack-matched suggestions for
+this project; recommend missing ones to the user only when a task would clearly
+benefit - not as a routine.
+
 ### Continuity protocol (three layers)
 
 Layer 1 - ambient: update wip.md after EVERY significant step (file written, decision
