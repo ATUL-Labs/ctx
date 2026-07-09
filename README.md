@@ -4,7 +4,7 @@ The shared brain for developers who work across many AI coding agents.
 
 **Author:** [pulak-ranjan](https://github.com/pulak-ranjan) | **Owned by:** [ATUL AI](https://github.com/ATUL-Labs)
 
-> **Beta.** The core protocol, index, and viewer are built and
+> **Beta.** See [CHANGELOG.md](CHANGELOG.md) for release history. The core protocol, index, and viewer are built and
 > tested, but this is still young software - expect rough edges. Token-savings
 > benchmarks are in progress; see [Why it's cheap on tokens](#why-its-cheap-on-tokens)
 > for what's measured versus what's still being verified.
@@ -237,6 +237,7 @@ Created in each project root. Any agent that can read markdown can use it.
   sessions/       Compressed conversation summaries (one per day)
   pages/          Knowledge pages:
     stack.md        Tech stack, folder structure, naming conventions
+    run.md          How to install, boot, test, and access the app
     mistakes.md     What broke, why, never repeat
     patterns.md     What works in this project
     design.md       Design rules for this project
@@ -375,6 +376,7 @@ ctx/
     wip.md
     pages/
       stack.md
+      run.md
       mistakes.md
       patterns.md
       design.md

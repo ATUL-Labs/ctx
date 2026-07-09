@@ -498,6 +498,54 @@
   .drawer-code li { padding: 0 14px; white-space: pre-wrap; word-break: break-word; border-left: 3px solid transparent; }
   .drawer-code li.hit { border-left-color: var(--accent); background: rgba(77,227,255,0.07); }
   .drawer-code li::marker { color: var(--dim); font-size: 10.5px; }
+
+  .drawer.split { width: 92%; min-width: 480px; }
+  .drawer-panes { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+  .drawer-pane { flex: 1 1 50%; min-width: 0; display: flex; flex-direction: column; }
+  .drawer-pane + .drawer-pane { border-left: 1px solid var(--panel-border); }
+
+  .crumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; flex: 1; min-width: 0; position: relative; }
+  .crumb { background: transparent; border: none; color: var(--accent); font-family: var(--mono); font-size: 12.5px; padding: 2px 3px; border-radius: 4px; cursor: pointer; }
+  .crumb:hover { background: rgba(77,227,255,0.12); }
+  .crumb-sep { color: var(--dim); font-size: 11px; }
+  .crumb-leaf { color: var(--ink); font-family: var(--mono); font-size: 12.5px; padding: 2px 3px; }
+
+  .crumb-menu { position: absolute; top: 100%; left: 0; z-index: 130; max-height: 320px; overflow-y: auto; min-width: 220px;
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); padding: 6px; }
+  .crumb-menu-item { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; background: transparent; border: none;
+    color: var(--dim); font-family: var(--mono); font-size: 11.5px; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+  .crumb-menu-item:hover { color: var(--ink); background: rgba(255,255,255,0.05); }
+  .crumb-menu-item .side-btn { margin-left: auto; color: var(--dim); border: 1px solid var(--panel-border); border-radius: 4px; background: transparent; font-size: 10px; padding: 1px 5px; cursor: pointer; }
+  .crumb-menu-item .side-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  .pane-refs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 6px 18px; border-bottom: 1px solid var(--panel-border); }
+  .pane-refs-label { color: var(--dim); font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .ref-chip { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.04); border: 1px solid var(--panel-border);
+    color: var(--dim); font-family: var(--mono); font-size: 10.5px; padding: 2px 8px; border-radius: 999px; cursor: pointer; }
+  .ref-chip:hover { color: var(--ink); border-color: var(--accent); }
+
+  .pane-actions { display: flex; gap: 6px; flex: none; }
+  .pane-btn { background: transparent; border: 1px solid var(--panel-border); color: var(--dim); border-radius: 6px; height: 26px; padding: 0 8px; line-height: 1; cursor: pointer; font-size: 12px; }
+  .pane-btn:hover { color: var(--ink); border-color: var(--accent); }
+
+  /* ---------- schema fullscreen canvas ---------- */
+  .schema-head { display: flex; align-items: center; gap: 10px; }
+  .schema-head h2 { flex: 1; margin: 0; }
+
+  .schema-overlay { position: fixed; inset: 0; z-index: 110; background: var(--bg, #0b0e14); display: none; flex-direction: column; }
+  .schema-overlay.open { display: flex; }
+  .schema-overlay-bar { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--panel-border); background: var(--panel); }
+  .schema-overlay-bar .title { font-family: var(--mono); font-size: 13px; color: var(--ink); font-weight: 700; flex: none; }
+  .schema-overlay-bar .hint { color: var(--dim); font-family: var(--mono); font-size: 10.5px; flex: 1; }
+  .schema-overlay-bar input { max-width: 220px; }
+
+  .schema-viewport { flex: 1; overflow: hidden; position: relative; cursor: grab; touch-action: none; }
+  .schema-viewport.panning { cursor: grabbing; }
+  .schema-world { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+  .schema-world svg { position: absolute; top: 0; left: 0; overflow: visible; pointer-events: none; }
+  .schema-world .schema-card { position: absolute; width: 220px; cursor: move; user-select: none; }
+  .schema-world .schema-card.dim { opacity: 0.18; }
+  .schema-world .schema-card.focus { box-shadow: 0 0 0 1.5px var(--accent); }
 </style>
 </head>
 <body>
@@ -540,7 +588,10 @@
   </section>
 
   <section class="panel panel-schema fade-up" style="animation-delay:125ms">
-    <h2>Schema</h2>
+    <div class="schema-head">
+      <h2>Schema</h2>
+      <button class="pane-btn" id="schema-expand" type="button" title="open fullscreen canvas">&#x26F6; expand</button>
+    </div>
     <input class="search-box schema-filter" id="schema-filter" type="text" placeholder="filter by table name...">
     <div class="schema-wrap" id="schema-wrap">
       <div id="schema-content"><div class="schema-empty">no schema detected (no migrations or SQL files indexed)</div></div>
@@ -570,13 +621,22 @@
 
 <div class="drawer-backdrop" id="drawer-backdrop"></div>
 <div class="drawer" id="drawer" role="dialog" aria-label="file preview">
-  <div class="drawer-header">
-    <div class="drawer-path" id="drawer-path"></div>
-    <button class="drawer-close" id="drawer-close" type="button" aria-label="close">&times;</button>
+  <div class="drawer-panes" id="drawer-panes"></div>
+</div>
+
+<div class="schema-overlay" id="schema-overlay" role="dialog" aria-label="schema canvas">
+  <div class="schema-overlay-bar">
+    <span class="title">Schema canvas</span>
+    <input class="search-box" id="schema-canvas-filter" type="text" placeholder="highlight table...">
+    <button class="pane-btn" id="schema-zoom-out" type="button" title="zoom out">&minus;</button>
+    <button class="pane-btn" id="schema-zoom-in" type="button" title="zoom in">+</button>
+    <button class="pane-btn" id="schema-zoom-fit" type="button" title="fit all tables">fit</button>
+    <button class="pane-btn" id="schema-layout-reset" type="button" title="forget dragged positions">reset layout</button>
+    <span class="hint">drag canvas to pan &middot; wheel to zoom &middot; drag a table to move it</span>
+    <button class="drawer-close" id="schema-overlay-close" type="button" aria-label="close">&times;</button>
   </div>
-  <div class="drawer-body">
-    <div class="drawer-outline" id="drawer-outline"></div>
-    <ol class="drawer-code" id="drawer-code"></ol>
+  <div class="schema-viewport" id="schema-viewport">
+    <div class="schema-world" id="schema-world"></div>
   </div>
 </div>
 
@@ -1161,6 +1221,237 @@ function fetchSchema(force) {
     .catch(function () {});
 }
 
+// ---------- schema fullscreen canvas (pan / zoom / drag) ----------
+var canvas = {
+  view: { x: 40, y: 40, s: 1 },
+  pos: {},        // tableName -> {x, y}
+  sizes: {},      // tableName -> {w, h} measured after mount
+  worldEl: qs('schema-world'),
+  viewportEl: qs('schema-viewport'),
+};
+var POS_KEY = 'ctxSchemaPos';
+
+function canvasApply() {
+  canvas.worldEl.style.transform =
+    'translate(' + canvas.view.x + 'px,' + canvas.view.y + 'px) scale(' + canvas.view.s + ')';
+}
+
+// deterministic layout: FK-connected clusters side by side, masonry inside each
+function canvasLayout(tables) {
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(POS_KEY) || '{}'); } catch {}
+  var byName = {};
+  tables.forEach(function (t) { byName[t.name] = t; });
+  var adj = {};
+  tables.forEach(function (t) {
+    adj[t.name] = adj[t.name] || [];
+    t.columns.forEach(function (c) {
+      if (c.fkTable && byName[c.fkTable]) {
+        adj[t.name].push(c.fkTable);
+        (adj[c.fkTable] = adj[c.fkTable] || []).push(t.name);
+      }
+    });
+  });
+  var seen = {};
+  var clusters = [];
+  tables.forEach(function (t) {
+    if (seen[t.name]) return;
+    var q = [t.name], members = [];
+    seen[t.name] = true;
+    while (q.length) {
+      var n = q.shift();
+      members.push(n);
+      (adj[n] || []).forEach(function (m) { if (!seen[m]) { seen[m] = true; q.push(m); } });
+    }
+    clusters.push(members);
+  });
+  clusters.sort(function (a, b) { return b.length - a.length; });
+
+  var CARD_W = 220, GAP = 40, clusterX = 0;
+  canvas.pos = {};
+  clusters.forEach(function (members) {
+    var cols = Math.max(1, Math.ceil(Math.sqrt(members.length)));
+    var colY = [];
+    for (var i = 0; i < cols; i++) colY.push(0);
+    members.forEach(function (name) {
+      var col = colY.indexOf(Math.min.apply(null, colY));
+      var h = (canvas.sizes[name] || { h: 30 + 18 * (byName[name].columns.length || 1) }).h;
+      canvas.pos[name] = { x: clusterX + col * (CARD_W + GAP), y: colY[col] };
+      colY[col] += h + GAP;
+    });
+    clusterX += cols * (CARD_W + GAP) + GAP * 2;
+  });
+  // saved drag positions win over auto-layout
+  Object.keys(saved).forEach(function (name) {
+    if (canvas.pos[name]) canvas.pos[name] = saved[name];
+  });
+}
+
+function canvasDrawLines(tables) {
+  var old = canvas.worldEl.querySelector('svg');
+  if (old) old.remove();
+  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', 10);
+  svg.setAttribute('height', 10);
+  tables.forEach(function (t) {
+    var a = canvas.pos[t.name];
+    if (!a) return;
+    t.columns.forEach(function (c) {
+      var b = c.fkTable && canvas.pos[c.fkTable];
+      if (!b) return;
+      var sa = canvas.sizes[t.name] || { w: 220, h: 60 };
+      var sb = canvas.sizes[c.fkTable] || { w: 220, h: 60 };
+      var x1 = a.x + sa.w / 2, y1 = a.y + sa.h / 2;
+      var x2 = b.x + sb.w / 2, y2 = b.y + sb.h / 2;
+      var midX = (x1 + x2) / 2;
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' C ' + midX + ' ' + y1 + ', ' + midX + ' ' + y2 + ', ' + x2 + ' ' + y2);
+      path.setAttribute('stroke', 'rgba(77,227,255,0.3)');
+      path.setAttribute('stroke-width', '1.5');
+      path.setAttribute('fill', 'none');
+      svg.appendChild(path);
+    });
+  });
+  canvas.worldEl.insertBefore(svg, canvas.worldEl.firstChild);
+}
+
+function canvasMountCards(tables) {
+  clear(canvas.worldEl);
+  tables.forEach(function (t) {
+    var card = renderSchemaCard(t);
+    canvas.worldEl.appendChild(card);
+    enableCardDrag(card, t.name, tables);
+  });
+  // measure real heights, then lay out and place
+  canvas.sizes = {};
+  canvas.worldEl.querySelectorAll('.schema-card').forEach(function (card) {
+    canvas.sizes[card.dataset.table] = { w: card.offsetWidth, h: card.offsetHeight };
+  });
+  canvasLayout(tables);
+  canvas.worldEl.querySelectorAll('.schema-card').forEach(function (card) {
+    var p = canvas.pos[card.dataset.table];
+    if (p) { card.style.left = p.x + 'px'; card.style.top = p.y + 'px'; }
+  });
+  canvasDrawLines(tables);
+}
+
+function canvasFit(tables) {
+  var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  tables.forEach(function (t) {
+    var p = canvas.pos[t.name];
+    var s = canvas.sizes[t.name] || { w: 220, h: 60 };
+    if (!p) return;
+    minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x + s.w); maxY = Math.max(maxY, p.y + s.h);
+  });
+  if (minX === Infinity) return;
+  // viewport can measure 0 mid-open (display just flipped); fall back to window size
+  var vw = canvas.viewportEl.clientWidth || window.innerWidth;
+  var vh = canvas.viewportEl.clientHeight || (window.innerHeight - 51);
+  var s = Math.min(vw / (maxX - minX + 80), vh / (maxY - minY + 80), 1.5);
+  canvas.view.s = Math.max(0.1, s);
+  canvas.view.x = (vw - (maxX - minX) * canvas.view.s) / 2 - minX * canvas.view.s;
+  canvas.view.y = (vh - (maxY - minY) * canvas.view.s) / 2 - minY * canvas.view.s;
+  canvasApply();
+}
+
+function enableCardDrag(card, name, tables) {
+  card.addEventListener('pointerdown', function (e) {
+    e.stopPropagation();
+    try { card.setPointerCapture(e.pointerId); } catch {}
+    var startX = e.clientX, startY = e.clientY;
+    var orig = canvas.pos[name];
+    function move(ev) {
+      canvas.pos[name] = {
+        x: orig.x + (ev.clientX - startX) / canvas.view.s,
+        y: orig.y + (ev.clientY - startY) / canvas.view.s,
+      };
+      card.style.left = canvas.pos[name].x + 'px';
+      card.style.top = canvas.pos[name].y + 'px';
+      canvasDrawLines(tables);
+    }
+    function up() {
+      card.removeEventListener('pointermove', move);
+      card.removeEventListener('pointerup', up);
+      var saved = {};
+      try { saved = JSON.parse(localStorage.getItem(POS_KEY) || '{}'); } catch {}
+      saved[name] = canvas.pos[name];
+      try { localStorage.setItem(POS_KEY, JSON.stringify(saved)); } catch {}
+    }
+    card.addEventListener('pointermove', move);
+    card.addEventListener('pointerup', up);
+  });
+}
+
+canvas.viewportEl.addEventListener('pointerdown', function (e) {
+  canvas.viewportEl.classList.add('panning');
+  try { canvas.viewportEl.setPointerCapture(e.pointerId); } catch {}
+  var startX = e.clientX, startY = e.clientY;
+  var origX = canvas.view.x, origY = canvas.view.y;
+  function move(ev) {
+    canvas.view.x = origX + ev.clientX - startX;
+    canvas.view.y = origY + ev.clientY - startY;
+    canvasApply();
+  }
+  function up() {
+    canvas.viewportEl.classList.remove('panning');
+    canvas.viewportEl.removeEventListener('pointermove', move);
+    canvas.viewportEl.removeEventListener('pointerup', up);
+  }
+  canvas.viewportEl.addEventListener('pointermove', move);
+  canvas.viewportEl.addEventListener('pointerup', up);
+});
+
+function canvasZoom(factor, cx, cy) {
+  var ns = Math.min(2.5, Math.max(0.1, canvas.view.s * factor));
+  var k = ns / canvas.view.s;
+  canvas.view.x = cx - (cx - canvas.view.x) * k;
+  canvas.view.y = cy - (cy - canvas.view.y) * k;
+  canvas.view.s = ns;
+  canvasApply();
+}
+
+canvas.viewportEl.addEventListener('wheel', function (e) {
+  e.preventDefault();
+  var rect = canvas.viewportEl.getBoundingClientRect();
+  canvasZoom(Math.exp(-e.deltaY * 0.0015), e.clientX - rect.left, e.clientY - rect.top);
+}, { passive: false });
+
+qs('schema-zoom-in').addEventListener('click', function () {
+  canvasZoom(1.25, canvas.viewportEl.clientWidth / 2, canvas.viewportEl.clientHeight / 2);
+});
+qs('schema-zoom-out').addEventListener('click', function () {
+  canvasZoom(0.8, canvas.viewportEl.clientWidth / 2, canvas.viewportEl.clientHeight / 2);
+});
+qs('schema-zoom-fit').addEventListener('click', function () { canvasFit(state.schemaTables); });
+qs('schema-layout-reset').addEventListener('click', function () {
+  try { localStorage.removeItem(POS_KEY); } catch {}
+  canvasMountCards(state.schemaTables);
+  canvasFit(state.schemaTables);
+});
+
+qs('schema-canvas-filter').addEventListener('input', function (e) {
+  var q = e.target.value.trim().toLowerCase();
+  canvas.worldEl.querySelectorAll('.schema-card').forEach(function (card) {
+    var match = !q || card.dataset.table.toLowerCase().indexOf(q) !== -1;
+    card.classList.toggle('dim', q && !match);
+    card.classList.toggle('focus', q && match);
+  });
+});
+
+function openSchemaCanvas() {
+  qs('schema-overlay').classList.add('open');
+  canvasMountCards(state.schemaTables);
+  canvasFit(state.schemaTables);
+}
+
+function closeSchemaCanvas() {
+  qs('schema-overlay').classList.remove('open');
+}
+
+qs('schema-expand').addEventListener('click', openSchemaCanvas);
+qs('schema-overlay-close').addEventListener('click', closeSchemaCanvas);
+
 // ---------- memory tabs ----------
 document.querySelectorAll('.tab-btn').forEach(function (btn) {
   btn.addEventListener('click', function () {
@@ -1302,10 +1593,11 @@ function renderActivity(lines) {
   state.seenActivityKeys = nextKeys;
 }
 
-// ---------- codebase explorer drawer ----------
+// ---------- codebase explorer drawer (pane-based, VS Code-ish) ----------
 var drawerEl = qs('drawer');
 var drawerBackdrop = qs('drawer-backdrop');
-var drawerState = { terms: [] };
+var drawerPanesEl = qs('drawer-panes');
+var panes = []; // [{ path, terms, root, codeEl, outlineEl }]
 
 function currentSearchTerms() {
   var q = qs('search-input').value.trim();
@@ -1321,61 +1613,178 @@ function lineHasTerm(line, terms) {
   return false;
 }
 
-function openDrawer(filePath) {
-  drawerState.terms = currentSearchTerms();
-  qs('drawer-path').textContent = filePath;
-  var codeHost = qs('drawer-code');
-  var outlineHost = qs('drawer-outline');
-  clear(codeHost);
-  clear(outlineHost);
-  codeHost.appendChild(textEl('li', 'loading...'));
+function closeCrumbMenus() {
+  document.querySelectorAll('.crumb-menu').forEach(function (m) { m.remove(); });
+}
 
-  drawerEl.classList.add('open');
-  drawerBackdrop.classList.add('open');
+function buildCrumbs(pane) {
+  var host = textEl('div', null, 'crumbs');
+  var parts = pane.path.split('/');
+  parts.forEach(function (part, i) {
+    if (i < parts.length - 1) {
+      var btn = textEl('button', part, 'crumb');
+      btn.type = 'button';
+      var dir = parts.slice(0, i + 1).join('/');
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var open = host.querySelector('.crumb-menu');
+        closeCrumbMenus();
+        if (!open) showCrumbMenu(host, dir, pane);
+      });
+      host.appendChild(btn);
+      host.appendChild(textEl('span', '›', 'crumb-sep'));
+    } else {
+      host.appendChild(textEl('span', part, 'crumb-leaf'));
+    }
+  });
+  return host;
+}
+
+function showCrumbMenu(crumbHost, dir, pane) {
+  var menu = textEl('div', null, 'crumb-menu');
+  crumbHost.appendChild(menu);
+  menu.appendChild(textEl('div', 'loading...', 'crumb-menu-item'));
+  fetch('/api/ls?dir=' + encodeURIComponent(dir))
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      clear(menu);
+      if (dir.indexOf('/') !== -1) {
+        var up = textEl('button', '← ..', 'crumb-menu-item');
+        up.type = 'button';
+        up.addEventListener('click', function (e) { e.stopPropagation(); clear(menu); menu.remove(); showCrumbMenu(crumbHost, dir.split('/').slice(0, -1).join('/'), pane); });
+        menu.appendChild(up);
+      }
+      (data.dirs || []).forEach(function (d) {
+        var item = textEl('button', '▸ ' + d, 'crumb-menu-item');
+        item.type = 'button';
+        item.addEventListener('click', function (e) { e.stopPropagation(); menu.remove(); showCrumbMenu(crumbHost, dir + '/' + d, pane); });
+        menu.appendChild(item);
+      });
+      (data.files || []).forEach(function (f) {
+        var item = textEl('button', null, 'crumb-menu-item');
+        item.type = 'button';
+        item.appendChild(document.createTextNode(f));
+        var side = textEl('button', '⥠ side', 'side-btn');
+        side.type = 'button';
+        side.addEventListener('click', function (e) { e.stopPropagation(); closeCrumbMenus(); openToSide(dir + '/' + f); });
+        item.appendChild(side);
+        item.addEventListener('click', function () { closeCrumbMenus(); loadPane(pane, dir + '/' + f); });
+        menu.appendChild(item);
+      });
+      if (!(data.dirs || []).length && !(data.files || []).length) {
+        menu.appendChild(textEl('div', 'empty', 'crumb-menu-item'));
+      }
+    })
+    .catch(function () { clear(menu); menu.appendChild(textEl('div', 'failed to list', 'crumb-menu-item')); });
+}
+
+function loadRefs(pane) {
+  var refsHost = pane.root.querySelector('.pane-refs');
+  clear(refsHost);
+  var base = pane.path.split('/').pop();
+  var stem = base.replace(/\.[^.]+$/, '');
+  if (stem.length < 3) { refsHost.style.display = 'none'; return; }
+  fetch('/api/search?q=' + encodeURIComponent(stem))
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      var seen = {};
+      var rows = (data.rows || []).filter(function (row) {
+        if (row.path === pane.path || seen[row.path]) return false;
+        seen[row.path] = true;
+        return true;
+      }).slice(0, 8);
+      if (!rows.length) { refsHost.style.display = 'none'; return; }
+      refsHost.style.display = '';
+      refsHost.appendChild(textEl('span', 'referenced by', 'pane-refs-label'));
+      rows.forEach(function (row) {
+        var chip = textEl('button', row.path.split('/').pop(), 'ref-chip');
+        chip.type = 'button';
+        chip.title = row.path + ' (text match, may include false positives)';
+        chip.addEventListener('click', function (e) {
+          if (e.ctrlKey || e.metaKey) openToSide(row.path);
+          else loadPane(pane, row.path);
+        });
+        refsHost.appendChild(chip);
+      });
+    })
+    .catch(function () { refsHost.style.display = 'none'; });
+}
+
+function buildPane() {
+  var root = textEl('div', null, 'drawer-pane');
+  var header = textEl('div', null, 'drawer-header');
+  header.appendChild(textEl('div', null, 'crumbs'));
+  var actions = textEl('div', null, 'pane-actions');
+  var sideBtn = textEl('button', '⥠ open to side', 'pane-btn');
+  sideBtn.type = 'button';
+  sideBtn.title = 'duplicate this file into a second pane';
+  var closeBtn = textEl('button', '×', 'drawer-close');
+  closeBtn.type = 'button';
+  actions.appendChild(sideBtn);
+  actions.appendChild(closeBtn);
+  header.appendChild(actions);
+  root.appendChild(header);
+  root.appendChild(textEl('div', null, 'pane-refs'));
+  var body = textEl('div', null, 'drawer-body');
+  var outline = textEl('div', null, 'drawer-outline');
+  var code = document.createElement('ol');
+  code.className = 'drawer-code';
+  body.appendChild(outline);
+  body.appendChild(code);
+  root.appendChild(body);
+  var pane = { path: '', terms: [], root: root, codeEl: code, outlineEl: outline };
+  sideBtn.addEventListener('click', function () { openToSide(pane.path); });
+  closeBtn.addEventListener('click', function () { closePane(pane); });
+  return pane;
+}
+
+function loadPane(pane, filePath) {
+  pane.path = filePath;
+  pane.terms = currentSearchTerms();
+  var header = pane.root.querySelector('.drawer-header');
+  header.replaceChild(buildCrumbs(pane), header.querySelector('.crumbs'));
+  clear(pane.codeEl);
+  clear(pane.outlineEl);
+  pane.codeEl.appendChild(textEl('li', 'loading...'));
 
   fetch('/api/file?path=' + encodeURIComponent(filePath))
     .then(function (r) { if (!r.ok) throw new Error('bad status'); return r.json(); })
-    .then(function (data) {
-      renderDrawerCode(data.text || '');
-    })
+    .then(function (data) { renderPaneCode(pane, data.text || ''); })
     .catch(function () {
-      clear(codeHost);
-      codeHost.appendChild(textEl('li', 'failed to load file'));
+      clear(pane.codeEl);
+      pane.codeEl.appendChild(textEl('li', 'failed to load file'));
     });
 
   fetch('/api/symbols?path=' + encodeURIComponent(filePath))
     .then(function (r) { if (!r.ok) throw new Error('bad status'); return r.json(); })
-    .then(function (data) { renderDrawerOutline(data.rows || []); })
+    .then(function (data) { renderPaneOutline(pane, data.rows || []); })
     .catch(function () {
-      clear(outlineHost);
-      outlineHost.appendChild(textEl('div', 'failed to load symbols', 'empty-state'));
+      clear(pane.outlineEl);
+      pane.outlineEl.appendChild(textEl('div', 'failed to load symbols', 'empty-state'));
     });
+
+  loadRefs(pane);
 }
 
-function renderDrawerCode(text) {
-  var host = qs('drawer-code');
-  clear(host);
-  var lines = text.split('\n');
+function renderPaneCode(pane, text) {
+  clear(pane.codeEl);
   var firstHit = null;
-  lines.forEach(function (line) {
+  text.split('\n').forEach(function (line) {
     var li = document.createElement('li');
     li.textContent = line;
-    if (drawerState.terms.length && lineHasTerm(line, drawerState.terms)) {
+    if (pane.terms.length && lineHasTerm(line, pane.terms)) {
       li.classList.add('hit');
       if (!firstHit) firstHit = li;
     }
-    host.appendChild(li);
+    pane.codeEl.appendChild(li);
   });
-  if (firstHit) {
-    firstHit.scrollIntoView({ block: 'center' });
-  }
+  if (firstHit) firstHit.scrollIntoView({ block: 'center' });
 }
 
-function renderDrawerOutline(rows) {
-  var host = qs('drawer-outline');
-  clear(host);
+function renderPaneOutline(pane, rows) {
+  clear(pane.outlineEl);
   if (!rows.length) {
-    host.appendChild(textEl('div', 'no symbols', 'empty-state'));
+    pane.outlineEl.appendChild(textEl('div', 'no symbols', 'empty-state'));
     return;
   }
   rows.forEach(function (row) {
@@ -1383,27 +1792,55 @@ function renderDrawerOutline(rows) {
     btn.type = 'button';
     btn.appendChild(textEl('span', row.kind, 'kind'));
     btn.appendChild(document.createTextNode(row.name));
-    btn.addEventListener('click', function () { jumpToLine(row.line); });
-    host.appendChild(btn);
+    btn.addEventListener('click', function () {
+      var li = pane.codeEl.children[row.line - 1];
+      if (li) li.scrollIntoView({ block: 'center' });
+    });
+    pane.outlineEl.appendChild(btn);
   });
 }
 
-function jumpToLine(lineNo) {
-  var host = qs('drawer-code');
-  var li = host.children[lineNo - 1];
-  if (li) li.scrollIntoView({ block: 'center' });
+function syncPaneDom() {
+  clear(drawerPanesEl);
+  panes.forEach(function (p) { drawerPanesEl.appendChild(p.root); });
+  drawerEl.classList.toggle('split', panes.length > 1);
+}
+
+function openDrawer(filePath) {
+  panes = [buildPane()];
+  syncPaneDom();
+  loadPane(panes[0], filePath);
+  drawerEl.classList.add('open');
+  drawerBackdrop.classList.add('open');
+}
+
+function openToSide(filePath) {
+  if (panes.length < 2) {
+    panes.push(buildPane());
+    syncPaneDom();
+  }
+  loadPane(panes[panes.length - 1], filePath);
+}
+
+function closePane(pane) {
+  if (panes.length === 1) return closeDrawer();
+  panes = panes.filter(function (p) { return p !== pane; });
+  syncPaneDom();
 }
 
 function closeDrawer() {
+  panes = [];
   drawerEl.classList.remove('open');
   drawerBackdrop.classList.remove('open');
 }
 
-qs('drawer-close').addEventListener('click', closeDrawer);
+document.addEventListener('click', closeCrumbMenus);
 drawerBackdrop.addEventListener('click', closeDrawer);
 
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') {
+    closeCrumbMenus();
+    closeSchemaCanvas();
     closeDrawer();
     return;
   }

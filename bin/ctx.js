@@ -161,11 +161,11 @@ function hookUpdate() {
           try {
             const relPosix = rel.split(path.sep).join('/');
             fs.writeFileSync(path.join(root, '.ctx', 'live.json'), JSON.stringify({ file: relPosix, tool, ts: Date.now() }));
-          } catch {}
+          } catch (e) { process.stderr.write('ctx hook: live.json write failed: ' + e.message + '\n'); }
         }
       }
     }
-  } catch {}
+  } catch (e) { process.stderr.write('ctx hook: index update failed: ' + e.message + '\n'); }
   process.stdout.write('{}\n');
 }
 

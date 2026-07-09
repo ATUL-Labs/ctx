@@ -78,6 +78,23 @@ test('file endpoint serves only indexed paths', async () => {
   });
 });
 
+test('ls endpoint lists immediate children from the index', async () => {
+  const root = makeProject();
+  fs.mkdirSync(path.join(root, 'src', 'deep'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'src', 'deep', 'inner.js'), 'export function innerFn() {}\n');
+  await withServer(root, async (base) => {
+    await fetch(base + '/api/search?q=serveTestFn'); // forces index refresh
+    const top = await (await fetch(base + '/api/ls?dir=src')).json();
+    assert.deepEqual(top.dirs, ['deep']);
+    assert.ok(top.files.includes('app.js'));
+    assert.ok(!top.files.includes('inner.js'));
+    const rootLs = await (await fetch(base + '/api/ls')).json();
+    assert.ok(rootLs.dirs.includes('src'));
+    const empty = await (await fetch(base + '/api/ls?dir=nope')).json();
+    assert.deepEqual(empty, { dirs: [], files: [] });
+  });
+});
+
 test('session endpoint reads sessions dir with name guard', async () => {
   const root = makeProject();
   fs.mkdirSync(path.join(root, '.ctx', 'sessions'), { recursive: true });

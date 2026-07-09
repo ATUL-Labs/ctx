@@ -28,6 +28,7 @@ Every session, before ANY response:
      skill's loading rule (one style page + picked palette/fonts only)
    - Backend: `patterns.md`
    - New feature: `patterns.md` + `design.md`
+   - Setup/boot/test/deploy questions: `run.md`
    - Any task: check `mistakes.md` if doing something similar to a past failure
 6. Do NOT bulk-load all pages. Token budget for .ctx/ content: under 200 lines per session.
 

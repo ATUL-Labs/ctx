@@ -20,6 +20,7 @@ When `.ctx/` does not exist:
      sessions/
      pages/
        stack.md
+       run.md
        mistakes.md
        patterns.md
        design.md
@@ -30,8 +31,11 @@ When `.ctx/` does not exist:
    - List top-level folder structure
    - Identify framework (Laravel, Next.js, Django, etc.)
    - Note naming conventions from existing code
-3. Write initial `status.md` and `INDEX.md`
-4. Populate `pages/rules.md` with any CLAUDE.md / AGENTS.md / .cursorrules content
+3. Populate `pages/run.md`: how to install deps, start dev servers, run tests/migrations,
+   and which env vars or key URLs matter. Pull commands from package.json scripts,
+   composer.json, Makefile, or README - don't guess.
+4. Write initial `status.md` and `INDEX.md`
+5. Populate `pages/rules.md` with any CLAUDE.md / AGENTS.md / .cursorrules content
 
 ## Compress Old Sessions
 
