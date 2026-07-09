@@ -2,7 +2,7 @@
 
 All notable changes to ctx. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [0.1.12] - 2026-07-09
 
 ### Added
 - **Schema canvas focus mode** - click a table to spotlight it: the table, its FK
@@ -14,7 +14,10 @@ All notable changes to ctx. Format loosely follows [Keep a Changelog](https://ke
   CI workflows) two levels deep and maps detected tech to specific MCP servers
   (Laravel → laravel-boost, Postgres → Postgres MCP, Snowflake → Snowflake MCP, ...).
   Shown as chips in the viewer's Codebase panel; the using-ctx skill now tells agents
-  to prefer the stack-matching MCP over generic shell probing ("tool focus").
+  to prefer the stack-matching MCP over generic shell probing ("tool focus"), and to
+  infer suggestions themselves when the static map misses.
+- MCP suggestions already configured in the project `.mcp.json` or `~/.claude.json`
+  are hidden - only genuinely missing servers are suggested.
 - File preview renders `.md` files as formatted markdown by default (headings, lists,
   checkboxes, code fences, frontmatter chips) using the existing viewer renderer, with a
   `raw`/`rendered` toggle per pane. Clicking an outline symbol switches to raw view and
