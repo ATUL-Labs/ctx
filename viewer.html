@@ -524,6 +524,9 @@
     color: var(--dim); font-family: var(--mono); font-size: 10.5px; padding: 2px 8px; border-radius: 999px; cursor: pointer; }
   .ref-chip:hover { color: var(--ink); border-color: var(--accent); }
 
+  .drawer-mdview { overflow: auto; padding: 12px 18px; }
+  .pane-btn.active { color: var(--accent); border-color: var(--accent); }
+
   .pane-actions { display: flex; gap: 6px; flex: none; }
   .pane-btn { background: transparent; border: 1px solid var(--panel-border); color: var(--dim); border-radius: 6px; height: 26px; padding: 0 8px; line-height: 1; cursor: pointer; font-size: 12px; }
   .pane-btn:hover { color: var(--ink); border-color: var(--accent); }
@@ -1597,7 +1600,7 @@ function renderActivity(lines) {
 var drawerEl = qs('drawer');
 var drawerBackdrop = qs('drawer-backdrop');
 var drawerPanesEl = qs('drawer-panes');
-var panes = []; // [{ path, terms, root, codeEl, outlineEl }]
+var panes = []; // [{ path, terms, rawText, isMd, view, root, contentEl, outlineEl, mdBtn, bodyEl }]
 
 function currentSearchTerms() {
   var q = qs('search-input').value.trim();
@@ -1715,11 +1718,16 @@ function buildPane() {
   var header = textEl('div', null, 'drawer-header');
   header.appendChild(textEl('div', null, 'crumbs'));
   var actions = textEl('div', null, 'pane-actions');
+  var mdBtn = textEl('button', 'raw', 'pane-btn');
+  mdBtn.type = 'button';
+  mdBtn.title = 'toggle rendered markdown / raw source';
+  mdBtn.style.display = 'none';
   var sideBtn = textEl('button', '⥠ open to side', 'pane-btn');
   sideBtn.type = 'button';
   sideBtn.title = 'duplicate this file into a second pane';
   var closeBtn = textEl('button', '×', 'drawer-close');
   closeBtn.type = 'button';
+  actions.appendChild(mdBtn);
   actions.appendChild(sideBtn);
   actions.appendChild(closeBtn);
   header.appendChild(actions);
@@ -1732,27 +1740,34 @@ function buildPane() {
   body.appendChild(outline);
   body.appendChild(code);
   root.appendChild(body);
-  var pane = { path: '', terms: [], root: root, codeEl: code, outlineEl: outline };
+  var pane = { path: '', terms: [], rawText: '', isMd: false, view: 'code', root: root, contentEl: code, outlineEl: outline, mdBtn: mdBtn, bodyEl: body };
   sideBtn.addEventListener('click', function () { openToSide(pane.path); });
   closeBtn.addEventListener('click', function () { closePane(pane); });
+  mdBtn.addEventListener('click', function () {
+    pane.view = pane.view === 'md' ? 'code' : 'md';
+    renderPaneView(pane);
+  });
   return pane;
 }
 
 function loadPane(pane, filePath) {
   pane.path = filePath;
   pane.terms = currentSearchTerms();
+  pane.isMd = /\.(md|markdown)$/i.test(filePath);
+  pane.view = pane.isMd ? 'md' : 'code';
+  pane.mdBtn.style.display = pane.isMd ? '' : 'none';
   var header = pane.root.querySelector('.drawer-header');
   header.replaceChild(buildCrumbs(pane), header.querySelector('.crumbs'));
-  clear(pane.codeEl);
+  pane.rawText = 'loading...';
+  renderPaneView(pane);
   clear(pane.outlineEl);
-  pane.codeEl.appendChild(textEl('li', 'loading...'));
 
   fetch('/api/file?path=' + encodeURIComponent(filePath))
     .then(function (r) { if (!r.ok) throw new Error('bad status'); return r.json(); })
     .then(function (data) { renderPaneCode(pane, data.text || ''); })
     .catch(function () {
-      clear(pane.codeEl);
-      pane.codeEl.appendChild(textEl('li', 'failed to load file'));
+      pane.rawText = 'failed to load file';
+      renderPaneView(pane);
     });
 
   fetch('/api/symbols?path=' + encodeURIComponent(filePath))
@@ -1767,18 +1782,34 @@ function loadPane(pane, filePath) {
 }
 
 function renderPaneCode(pane, text) {
-  clear(pane.codeEl);
-  var firstHit = null;
-  text.split('\n').forEach(function (line) {
-    var li = document.createElement('li');
-    li.textContent = line;
-    if (pane.terms.length && lineHasTerm(line, pane.terms)) {
-      li.classList.add('hit');
-      if (!firstHit) firstHit = li;
-    }
-    pane.codeEl.appendChild(li);
-  });
-  if (firstHit) firstHit.scrollIntoView({ block: 'center' });
+  pane.rawText = text;
+  renderPaneView(pane);
+}
+
+function renderPaneView(pane) {
+  pane.mdBtn.textContent = pane.view === 'md' ? 'raw' : 'rendered';
+  pane.mdBtn.classList.toggle('active', pane.view === 'md');
+  var next;
+  if (pane.isMd && pane.view === 'md') {
+    next = textEl('div', null, 'drawer-mdview md');
+    next.appendChild(renderMarkdown(pane.rawText));
+  } else {
+    next = document.createElement('ol');
+    next.className = 'drawer-code';
+    var firstHit = null;
+    pane.rawText.split('\n').forEach(function (line) {
+      var li = document.createElement('li');
+      li.textContent = line;
+      if (pane.terms.length && lineHasTerm(line, pane.terms)) {
+        li.classList.add('hit');
+        if (!firstHit) firstHit = li;
+      }
+      next.appendChild(li);
+    });
+    if (firstHit) requestAnimationFrame(function () { firstHit.scrollIntoView({ block: 'center' }); });
+  }
+  pane.bodyEl.replaceChild(next, pane.contentEl);
+  pane.contentEl = next;
 }
 
 function renderPaneOutline(pane, rows) {
@@ -1793,7 +1824,8 @@ function renderPaneOutline(pane, rows) {
     btn.appendChild(textEl('span', row.kind, 'kind'));
     btn.appendChild(document.createTextNode(row.name));
     btn.addEventListener('click', function () {
-      var li = pane.codeEl.children[row.line - 1];
+      if (pane.view === 'md') { pane.view = 'code'; renderPaneView(pane); }
+      var li = pane.contentEl.children[row.line - 1];
       if (li) li.scrollIntoView({ block: 'center' });
     });
     pane.outlineEl.appendChild(btn);

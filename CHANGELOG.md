@@ -2,6 +2,14 @@
 
 All notable changes to ctx. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+- File preview renders `.md` files as formatted markdown by default (headings, lists,
+  checkboxes, code fences, frontmatter chips) using the existing viewer renderer, with a
+  `raw`/`rendered` toggle per pane. Clicking an outline symbol switches to raw view and
+  jumps to the line. Non-markdown files are unaffected.
+
 ## [0.1.11] - 2026-07-09
 
 ### Added
