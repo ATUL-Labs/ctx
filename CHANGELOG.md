@@ -2,6 +2,41 @@
 
 All notable changes to lex. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.1.14] - 2026-07-13
+
+### Added
+- **Gateway `errors` command** - fetches browser console errors from a running
+  `lex serve` instance via the gateway. Agents can now see console errors
+  without `run_command` or `read_url_content`.
+- **Gateway `links` command** - queries route/consumer relationships from the
+  index. With no args returns all links, with a URL arg filters by exact or
+  prefix match.
+- **Gateway `delete` command** - safe delete via `fileops.rm()`, moves files
+  to `.lex/trash/` with timestamp prefix.
+- **Three gateway input formats** - agents can now use:
+  1. Empty file (filename = command, 21% less overhead)
+  2. Plain text (`cmd arg1 arg2` or `cmd|arg1|arg2`, 17% less overhead)
+  3. JSON (backward compatible)
+- **Gateway token tracking** - gateway commands now appear in `lex tokens`
+  output, tracked as both writes and injections.
+
+### Changed
+- **Renamed `gateway.process()` to `gateway.processRequest()`** - eliminates
+  shadowing of the global `process` object, which caused `process.execPath`
+  to be `undefined` inside the function.
+- **Diff memory optimization** - `diff` command now loads FTS content only
+  for modified files instead of all indexed files. ~21x less memory on a
+  106-file project.
+- **Updated AGENTS.md** - documented all 3 input formats and added `links`
+  and `delete` to the command table.
+- **Updated README.md** - added Gateway section with feature comparison table,
+  updated test badge to 83 tests.
+
+### Fixed
+- `links` command was documented in gateway header but never implemented.
+- `delete` command was listed in available commands but never implemented.
+- Gateway header comment was stale (missing `errors`, `diff`, input formats).
+
 ## [0.1.13] - 2026-07-10
 
 ### Changed

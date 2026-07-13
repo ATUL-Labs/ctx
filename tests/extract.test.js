@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const { isTextFile, shouldSkipDir, extractSymbols, extractLinks, extractSchema, normalizeUrl } = require('../lib/extract');
 
 test('isTextFile accepts code and md, rejects binaries and minified', () => {
-  assert.equal(isTextFile('app/Models/User.php'), true);
+  assert.equal(isTextFile('app/Models/Account.php'), true);
   assert.equal(isTextFile('src/App.tsx'), true);
   assert.equal(isTextFile('README.md'), true);
   assert.equal(isTextFile('logo.png'), false);
@@ -185,7 +185,7 @@ test('extractSchema: generic SQL CREATE TABLE with FOREIGN KEY', () => {
 });
 
 test('extractSchema: non-migration php returns empty', () => {
-  const s = extractSchema('app/Models/User.php', '<?php class User {}\n');
+  const s = extractSchema('app/Models/Account.php', '<?php class Account {}\n');
   assert.equal(s.tables.length, 0);
   assert.equal(s.columns.length, 0);
 });

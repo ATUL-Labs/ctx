@@ -19,10 +19,64 @@ Every session, before ANY response:
    progress in 2-3 lines. Ask: resume or start fresh?
 3. Scan `.lex/INDEX.md` to know what knowledge exists. Do NOT load knowledge pages yet.
 
+## Search the Index, NOT the Filesystem (CRITICAL)
+
+The plugin ships a self-maintaining SQLite index (`.lex/index.db`, regenerable,
+gitignored). When node is available, ALWAYS prefer one index query over
+grep-and-read chains. This is not a suggestion - it is the #1 token-saving rule.
+
+**Before you grep or read a whole file, run one of these instead:**
+
+- Where is something: `node "<plugin-root>/bin/lex.js" search <terms>` (10 lines max)
+- Search terms are ANDed - prefer one distinctive term over several common ones.
+- What is in a file: `node "<plugin-root>/bin/lex.js" symbols <file>` (skip reading whole files)
+- What talks to a route: `node "<plugin-root>/bin/lex.js" links dashboard/tasks` (backend route + frontend consumers; slashless form avoids Git Bash path mangling on Windows)
+- Stack docs: `node "<plugin-root>/bin/lex.js" docs <term>` searches the global
+  distilled docs cache (~/.lex/docs/), built up by the docs-cache skill.
+- Large legacy folders: list path prefixes in `.lex/ignore` (one per line) to exclude them from indexing.
+- **Codebase guard**: `node "<plugin-root>/bin/lex.js" guard` scans all source
+  files for exposed secrets (API keys, passwords, tokens, connection strings)
+  and database anti-patterns (1-to-1 tables, EAV, settings tables). Exits with
+  code 1 if CRITICAL violations are found. Run before every commit.
+
+On Claude Code, `<plugin-root>` is `${CLAUDE_PLUGIN_ROOT}`; a PostToolUse hook keeps
+the index fresh automatically. On other platforms the index lazily refreshes on every
+query, so results are always current. If node is unavailable, fall back to grep - the
+index is an enhancer, never a requirement. True call-graphs and dead-code detection
+are out of scope by design; `search` gives reference-level answers.
+
+**Do NOT grep the whole project and read 500-line files when one `lex search` gives
+you the 10 lines you need.** The index is the shared brain. Use it.
+
 ## Before Any Task
 
-4. Determine task type: UI, backend, bug fix, new feature, refactor, docs
-5. Load ONLY the relevant knowledge pages from `.lex/pages/`:
+4. **Create `.lex/wip.md`** with the plan and steps. This is NOT optional. If you
+   start a task without wip.md, crash recovery is impossible. Format:
+   ```markdown
+   # Work In Progress
+   started: YYYY-MM-DD HH:MM
+   agent: model-name
+   via: platform-name
+   task: Brief description
+
+   ## Plan
+   1. [ ] Step one
+   2. [ ] Step two
+
+   ## Files read this session
+   - (track files read to avoid re-reads)
+
+   ## Files modified
+   - (updated as work proceeds)
+
+   ## Current state
+   (what's done, what's left)
+   ```
+5. Update `wip.md` checkboxes after EACH significant step. State on disk must
+   never be more than one step old.
+6. Append to `.lex/audit.log`: `YYYY-MM-DD HH:MM | agent | platform | action | target`
+7. Determine task type: UI, backend, bug fix, new feature, refactor, docs
+8. Load ONLY the relevant knowledge pages from `.lex/pages/`:
    - Bug fix: `mistakes.md`
    - UI work: `design.md` + `patterns.md`; then follow the design-intelligence
      skill's loading rule (one style page + picked palette/fonts only)
@@ -30,32 +84,32 @@ Every session, before ANY response:
    - New feature: `patterns.md` + `design.md`
    - Setup/boot/test/deploy questions: `run.md`
    - Any task: check `mistakes.md` if doing something similar to a past failure
-6. Do NOT bulk-load all pages. Token budget for .lex/ content: under 200 lines per session.
-7. **Stack overlay**: check `.lex/pages/stack.md` for the detected overlay key
-   (php, rust, python, typescript, go). When you invoke ANY skill that has an
-   overlays/ directory, also load `skills/<skill>/overlays/<overlay>.md`
-   alongside the skill's SKILL.md. The overlay adds stack-specific tools,
-   patterns, bug catalogs, and review checks. ~30-50 extra lines, loaded only
-   when that skill fires. If no overlay exists for the detected stack, proceed
-   with the core skill alone.
+9. Do NOT bulk-load all pages. Token budget for .lex/ content: under 200 lines per session.
+10. **Stack overlay**: check `.lex/pages/stack.md` for the detected overlay key
+    (php, rust, python, typescript, go). When you invoke ANY skill that has an
+    overlays/ directory, also load `skills/<skill>/overlays/<overlay>.md`
+    alongside the skill's SKILL.md. The overlay adds stack-specific tools,
+    patterns, bug catalogs, and review checks. ~30-50 extra lines, loaded only
+    when that skill fires. If no overlay exists for the detected stack, proceed
+    with the core skill alone.
 
 ## Before Writing Code
 
-7. Is there a simpler way? Ladder:
+11. Is there a simpler way? Ladder:
    a. Does this need to exist at all?
    b. Standard library does it? Use it.
    c. Native platform feature covers it? Use it.
    d. Already-installed dependency solves it? Use it.
    e. Can it be one line? One line.
    f. Only then: the minimum code that works.
-8. Does this match the project's patterns? (check `patterns.md` if loaded)
-9. If UI: is this intentional design or template-looking? Never boring. Never what every AI generates.
-10. Unfamiliar or version-sensitive API? Invoke the docs-cache skill: check
+12. Does this match the project's patterns? (check `patterns.md` if loaded)
+13. If UI: is this intentional design or template-looking? Never boring. Never what every AI generates.
+14. Unfamiliar or version-sensitive API? Invoke the docs-cache skill: check
     `lex docs <term>` before writing the call, fetch-and-distill on miss.
-11. **Secrets check**: about to write any API key, password, token, or
+15. **Secrets check**: about to write any API key, password, token, or
     connection string? STOP. It goes in `.env`, not in code. Check that `.env`
     is in `.gitignore` before creating it. See the security skill.
-12. **Database design**: creating a table or migration? Read the
+16. **Database design**: creating a table or migration? Read the
     database-architecture skill first. Prefer wide tables over join farms.
     Never create a 1-to-1 table. Never create a table for bounded (1-to-few)
     relationships. Denormalize fields that are read together.
@@ -123,70 +177,22 @@ After ANY compaction or context loss: state was already rehydrated or is one rea
 away (status.md + wip.md). CONTINUE the work silently from the current step. Do not
 ask the user to re-explain. Do not re-derive what the files already say.
 
-## Structural Queries (lex-index)
-
-The plugin ships a self-maintaining SQLite index (`.lex/index.db`, regenerable,
-gitignored). When node is available, prefer one index query over grep-and-read chains:
-
-Structural-query ladder: if a code-graph MCP (e.g. codebase-memory-mcp) is
-connected, use it for call-graphs, dead code, and trace-paths; for
-where-is-X and references use `lex search`; if node is unavailable, grep.
-
-- Where is something: `node "<plugin-root>/bin/lex.js" search <terms>` (10 lines max)
-- Search terms are ANDed - prefer one distinctive term over several common ones.
-- What is in a file: `node "<plugin-root>/bin/lex.js" symbols <file>` (skip reading whole files)
-- What talks to a route: `node "<plugin-root>/bin/lex.js" links dashboard/tasks` (backend route + frontend consumers; slashless form avoids Git Bash path mangling on Windows)
-- Stack docs: `node "<plugin-root>/bin/lex.js" docs <term>` searches the global
-  distilled docs cache (~/.lex/docs/), built up by the docs-cache skill.
-- Large legacy folders: list path prefixes in `.lex/ignore` (one per line) to exclude them from indexing.
-- **Codebase guard**: `node "<plugin-root>/bin/lex.js" guard` scans all source
-  files for exposed secrets (API keys, passwords, tokens, connection strings)
-  and database anti-patterns (1-to-1 tables, EAV, settings tables). Exits with
-  code 1 if CRITICAL violations are found. Run before every commit.
-
-On Claude Code, `<plugin-root>` is `${CLAUDE_PLUGIN_ROOT}`; a PostToolUse hook keeps
-the index fresh automatically. On other platforms the index lazily refreshes on every
-query, so results are always current. If node is unavailable, fall back to grep - the
-index is an enhancer, never a requirement. True call-graphs and dead-code detection
-are out of scope by design; `search` gives reference-level answers.
-
 ## During Work
 
-11. Create `.lex/wip.md` at task start:
-    ```markdown
-    # Work In Progress
-    started: YYYY-MM-DD HH:MM
-    agent: model-name
-    via: platform-name
-    task: Brief description
-
-    ## Plan
-    1. [ ] Step one
-    2. [ ] Step two
-
-    ## Files read this session
-    - (track files read to avoid re-reads)
-
-    ## Files modified
-    - (updated as work proceeds)
-
-    ## Current state
-    (what's done, what's left)
-    ```
-12. Update `wip.md` checkboxes after each significant step.
-13. Append to `.lex/audit.log`: `YYYY-MM-DD HH:MM | agent | platform | action | target`
+17. Update `wip.md` after each significant step (file written, test run, decision made).
+18. Append to `.lex/audit.log`: `YYYY-MM-DD HH:MM | agent | platform | action | target`
 
 ## After Completing Work
 
-14. Delete `.lex/wip.md`
-15. Rewrite `.lex/status.md` with current state (~30 lines max)
-16. Append compressed session summary to `.lex/sessions/YYYY-MM-DD.md`
-17. Extract learnings:
+19. Delete `.lex/wip.md`
+20. Rewrite `.lex/status.md` with current state (~30 lines max)
+21. Append compressed session summary to `.lex/sessions/YYYY-MM-DD.md`
+22. Extract learnings:
     - New pattern discovered: append to `pages/patterns.md`
     - Something broke: append to `pages/mistakes.md`
     - Design decision made: append to `pages/design.md`
-18. Update `.lex/INDEX.md` if new pages were added
-19. Final audit.log entry for session end
+23. Update `.lex/INDEX.md` if new pages were added
+24. Final audit.log entry for session end
 
 ## Auto-Grow: When Structure Changes
 

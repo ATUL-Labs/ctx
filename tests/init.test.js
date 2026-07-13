@@ -24,6 +24,9 @@ test('init scaffolds .lex from templates', () => {
   const gi = fs.readFileSync(path.join(dir, '.gitignore'), 'utf8');
   assert.match(gi, /\.lex\/index\.db\*/);
   assert.match(gi, /\.lex\/live\.json/);
+  assert.match(gi, /\.lex\/token-ledger\.json/);
+  assert.match(gi, /\.lex\/trash\//);
+  assert.match(gi, /\.lex\/server\.json/);
 });
 
 test('init is idempotent and never overwrites existing content', () => {
@@ -79,4 +82,21 @@ test('init does not crash when templates are missing', () => {
   assert.ok(fs.existsSync(path.join(targetDir, '.lex', 'pages')));
   assert.ok(fs.existsSync(path.join(targetDir, '.lex', 'sessions')));
   assert.ok(fs.existsSync(path.join(targetDir, '.gitignore')));
+});
+
+test('init excludes plugin dirs from index when dropped into project root', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lexignore-'));
+  // Simulate drop-in install: create plugin dirs at project root
+  for (const d of ['skills', 'hooks', 'lib', 'bin']) {
+    fs.mkdirSync(path.join(dir, d), { recursive: true });
+    fs.writeFileSync(path.join(dir, d, 'dummy.js'), 'console.log("x");\n');
+  }
+  run(dir, ['init']);
+  const ignorePath = path.join(dir, '.lex', 'ignore');
+  assert.ok(fs.existsSync(ignorePath), '.lex/ignore should exist when plugin dirs are present');
+  const ignore = fs.readFileSync(ignorePath, 'utf8');
+  assert.match(ignore, /skills\//);
+  assert.match(ignore, /hooks\//);
+  assert.match(ignore, /lib\//);
+  assert.match(ignore, /bin\//);
 });

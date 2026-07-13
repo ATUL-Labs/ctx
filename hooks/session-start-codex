@@ -3,19 +3,19 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-SKILL_FILE="$PLUGIN_ROOT/skills/using-ctx/SKILL.md"
+BOOTSTRAP_FILE="$PLUGIN_ROOT/skills/using-lex/BOOTSTRAP.md"
 
-if [ ! -f "$SKILL_FILE" ]; then
+if [ ! -f "$BOOTSTRAP_FILE" ]; then
     echo '{}'
     exit 0
 fi
 
-CONTENT="$(cat "$SKILL_FILE")"
+CONTENT="$(cat "$BOOTSTRAP_FILE")"
 
 WRAPPED="<EXTREMELY_IMPORTANT>
-You have ctx - the universal coding companion.
+You have lex - the universal coding companion.
 
-Below is the full content of your 'using-ctx' skill - your bootstrap for all skills. For all other skills, use the Skill tool:
+Below is your condensed bootstrap. For the full protocol, read skills/using-lex/SKILL.md. For other skills, read skills/<skill-name>/SKILL.md:
 
 ---
 $CONTENT

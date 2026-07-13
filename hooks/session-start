@@ -3,33 +3,33 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-SKILL_FILE="$PLUGIN_ROOT/skills/using-ctx/SKILL.md"
+BOOTSTRAP_FILE="$PLUGIN_ROOT/skills/using-lex/BOOTSTRAP.md"
 
-if [ ! -f "$SKILL_FILE" ]; then
+if [ ! -f "$BOOTSTRAP_FILE" ]; then
     echo '{}'
     exit 0
 fi
 
-CONTENT="$(cat "$SKILL_FILE")"
+CONTENT="$(cat "$BOOTSTRAP_FILE")"
 
 STATE=""
-if [ -f ".ctx/status.md" ]; then
+if [ -f ".lex/status.md" ]; then
     STATE="$STATE
 
-## CURRENT PROJECT STATE (.ctx/status.md)
-$(head -n 40 ".ctx/status.md")"
+## CURRENT PROJECT STATE (.lex/status.md)
+$(head -n 40 ".lex/status.md")"
 fi
-if [ -f ".ctx/wip.md" ]; then
+if [ -f ".lex/wip.md" ]; then
     STATE="$STATE
 
-## INTERRUPTED WORK - RESUME THIS (.ctx/wip.md)
-$(head -n 150 ".ctx/wip.md")"
+## INTERRUPTED WORK - RESUME THIS (.lex/wip.md)
+$(head -n 150 ".lex/wip.md")"
 fi
 
 WRAPPED="<EXTREMELY_IMPORTANT>
-You have ctx - the universal coding companion.
+You have lex - the universal coding companion.
 
-Below is the full content of your 'using-ctx' skill - your bootstrap for all skills. For all other skills, use the Skill tool:
+Below is your condensed bootstrap. For the full protocol, read skills/using-lex/SKILL.md. For other skills, use the Skill tool or read skills/<skill-name>/SKILL.md:"
 
 ---
 $CONTENT
@@ -38,7 +38,7 @@ $STATE
 
 ESCAPED="$(printf '%s' "$WRAPPED" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))' 2>/dev/null \
   || printf '%s' "$WRAPPED" | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>console.log(JSON.stringify(d)))' 2>/dev/null \
-  || printf '"ctx bootstrap could not be JSON-escaped: python3 and node are both unavailable. Read the skill manually via the Skill tool."')"
+  || printf '"lex bootstrap could not be JSON-escaped: python3 and node are both unavailable. Read the skill manually via the Skill tool."')"
 
 if [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then
     printf '{"additional_context": %s}' "$ESCAPED"

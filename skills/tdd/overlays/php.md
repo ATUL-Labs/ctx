@@ -15,8 +15,8 @@ Stack-specific TDD patterns. Load alongside tdd/SKILL.md when language is PHP.
 
 - **RefreshDatabase**: `use RefreshDatabase;` trait resets DB between tests.
   Migrations run once per test class, transactions roll back per test.
-- **Factories**: `User::factory()->create()`. Chain states:
-  `User::factory()->admin()->create()`. Define states in the factory.
+- **Factories**: `Account::factory()->create()`. Chain states:
+  `Account::factory()->admin()->create()`. Define states in the factory.
 - **Assertions**: `$this->assertDatabaseHas('users', ['email' => $x])`.
   `$response->assertJsonStructure(['data' => ['id', 'name']])`.
   `$response->assertSessionHasErrors(['email'])`.

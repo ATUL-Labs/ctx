@@ -3,11 +3,33 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-if [ ! -d ".ctx" ] || ! command -v node >/dev/null 2>&1; then
+if [ ! -d ".lex" ] || ! command -v node >/dev/null 2>&1; then
     cat > /dev/null 2>&1 || true
     echo '{}'
     exit 0
 fi
 
-node "$PLUGIN_ROOT/bin/ctx.js" hook-update 2>/dev/null || echo '{}'
+# Read stdin (hook payload), pass to hook-update, capture for audit logging
+STDIN=$(cat)
+echo "$STDIN" | node "$PLUGIN_ROOT/bin/lex.js" hook-update 2>/dev/null || true
+
+# Auto-log edits to audit.log if enabled in agent.json
+AUTO_AUDIT=$(node -e "try{const c=require('$PLUGIN_ROOT/lib/indexer').loadAgentConfig(process.cwd());process.stdout.write(c.auto_audit_log?'1':'0')}catch{process.stdout.write('1')}" 2>/dev/null)
+if [ "$AUTO_AUDIT" = "1" ]; then
+    FILE=$(echo "$STDIN" | node -e "try{const i=JSON.parse(require('fs').readFileSync(0,'utf8'));process.stdout.write(i.tool_input&&i.tool_input.file_path||'')}catch{}" 2>/dev/null)
+    TOOL=$(echo "$STDIN" | node -e "try{const i=JSON.parse(require('fs').readFileSync(0,'utf8'));process.stdout.write(i.tool_name||'edit')}catch{}" 2>/dev/null)
+    if [ -n "$FILE" ]; then
+        printf '%s | agent | platform | %s | %s\n' "$(date '+%Y-%m-%d %H:%M')" "$TOOL" "$FILE" >> ".lex/audit.log" 2>/dev/null || true
+    fi
+fi
+
+# Warn if no wip.md exists when edits are happening
+WARN_WIP=$(node -e "try{const c=require('$PLUGIN_ROOT/lib/indexer').loadAgentConfig(process.cwd());process.stdout.write(c.warn_no_wip_on_edit?'1':'0')}catch{process.stdout.write('1')}" 2>/dev/null)
+if [ "$WARN_WIP" = "1" ] && [ ! -f ".lex/wip.md" ]; then
+    ESCAPED='{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"WARNING: You are editing files but .lex/wip.md does not exist. Create it NOW with your plan and steps. Crash recovery depends on it. Run: node bin/lex.js status to see project state."}}'
+    echo "$ESCAPED"
+    exit 0
+fi
+
+echo '{}'
 exit 0

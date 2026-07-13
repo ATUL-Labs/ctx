@@ -1,0 +1,7 @@
+{
+  "require_wip": true,
+  "require_guard_before_commit": true,
+  "block_commit_on_critical": true,
+  "auto_audit_log": true,
+  "warn_no_wip_on_edit": true
+}

@@ -17,6 +17,10 @@ where git >nul 2>&1 && (
 )
 if "!BASH_PATH!"=="" where bash >nul 2>&1 && set "BASH_PATH=bash"
 if "!BASH_PATH!"=="" (
+    where node >nul 2>&1 && (
+        node "%SCRIPT_DIR%run-hook.js" %HOOK_NAME% 2>nul
+        exit /b !ERRORLEVEL!
+    )
     echo {}
     exit /b 0
 )

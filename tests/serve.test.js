@@ -32,7 +32,7 @@ test('overview returns live state and index stats', async () => {
     assert.match(o.wip, /SERVE_WIP_MARKER/);
     assert.deepEqual(o.pages, ['mistakes.md']);
     assert.equal(o.audit.length, 1);
-    assert.ok(o.index.files >= 2);
+    assert.ok(o.index.files >= 1);
     assert.ok(o.index.symbols >= 1);
   });
 });

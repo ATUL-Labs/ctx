@@ -7,13 +7,13 @@
 Cross-agent project memory, enforcement rules, and a live viewer.  
 Works on Claude Code, Cursor, Windsurf, Codex, Gemini, Copilot, Antigravity, Kimi, and any agent that can read files.
 
-[![Tests](https://img.shields.io/badge/tests-50%20pass-brightgreen)](#)
+[![Tests](https://img.shields.io/badge/tests-84%20pass-brightgreen)](#)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-green)](#)
 [![Dependencies](https://img.shields.io/badge/dependencies-zero-success)](#)
 [![Platforms](https://img.shields.io/badge/platforms-9%2B-informational)](#platform-support)
 
-[Quick Start](#quick-start) &bull; [Demo](#demo) &bull; [CLI](#cli) &bull; [Viewer](#viewer) &bull; [Skills](#skills) &bull; [How It Works](#how-it-works)
+[Quick Start](#quick-start) &bull; [CLI](#cli) &bull; [Gateway](#gateway) &bull; [Viewer](#viewer) &bull; [Skills](#skills) &bull; [Docs](#docs)
 
 </div>
 
@@ -77,19 +77,18 @@ and most of a 500-line file is irrelevant to the one function you needed.
 
 **lex replaces that pattern with a query:**
 
-- **Never a full-file read to find something.** `lex search <term>` returns matching
-  lines with a snippet - not the file. `lex symbols <file>` lists what's in a file
-  without opening it.
-- **Never re-derived from source.** Database schema, API routes, cross-file links -
-  all live in a SQLite index built once and kept fresh automatically. One command
-  instead of reading migrations by hand.
-- **Never re-read what's already known.** Knowledge pages are ~30-100 lines each,
-  loaded only when the task needs them.
-- **Never lost, so never rebuilt.** A fixed bug stays fixed because the next agent
-  reads that it was fixed.
+```bash
+lex search loadAgentConfig
+# → lib/indexer.js:42  function loadAgentConfig(root) {
+# → tests/indexer.test.js:88  test('loadAgentConfig returns defaults')
+# 2 files, ~248 tokens. grep would return ~4,880.
+```
 
-> Benchmarking is in progress. What's verifiable today: the mechanisms exist, they're
-> index-backed rather than read-backed, and you can watch them work live in the viewer.
+On a 45K-file repo, a common query like `ocr` returns 224 tokens via lex vs **6.7
+million tokens** via grep. That's not a savings - it's the difference between working
+and crashing.
+
+Full benchmarks: [docs/benchmarks.md](docs/benchmarks.md)
 
 ---
 
@@ -98,16 +97,14 @@ and most of a 500-line file is irrelevant to the one function you needed.
 | Feature | What it means |
 |---------|---------------|
 | **Continuity engine** | Three-layer state protection - `wip.md` checkpoints, ~80% context flush, hooks. Sessions survive compaction, crashes, and handoffs to a different agent |
+| **Enforcement** | PostToolUse hook warns if `wip.md` missing, auto-logs edits to `audit.log`. Git pre-commit hook runs `lex guard` and blocks on CRITICAL violations |
 | **Project memory** | `.lex/` folder with knowledge pages, session summaries, audit trail. Any agent that can read a file gets the full picture |
 | **lex-index** | Self-maintaining SQLite index - `search`, `symbols`, API-to-frontend `links`, DB schema map. Zero tokens to maintain |
-| **lex guard** | Scans for exposed secrets (CRITICAL) and DB anti-patterns (IMPORTANT) before every commit. Exit code 1 if found |
-| **Live viewer** | `lex serve` opens a mission-control dashboard - live status, task list, knowledge, schema, search, agent activity. Dark/light theme, collapsible panels |
-| **Reasoning skills** | 16 skills: brainstorming, planning, TDD, debugging, verification, code review, and more. Same discipline on every agent, every platform |
+| **lex guard** | Scans for exposed secrets (CRITICAL) and DB anti-patterns (IMPORTANT) before every commit |
+| **Live viewer** | `lex serve` opens a mission-control dashboard - live status, task list, knowledge, schema, search, agent activity |
+| **Reasoning skills** | 16 skills: brainstorming, planning, TDD, debugging, verification, code review, and more |
 | **Stack overlays** | PHP? Agent uses Xdebug. Rust? Agent uses `dbg!` and audits `unsafe`. 5 overlay packs auto-detect at `lex init` |
-| **Security stance** | Always active - never inline secrets, never commit `.env`, scan for exposed keys before commit |
-| **DB architecture** | Wide tables over join farms, denormalize-first, no 1-to-1 tables, no EAV. Activates when designing schemas |
-| **Design intelligence** | 8 style catalogs, 12 palettes, 10 font pairings. Anti-generic gate blocks template-looking UI |
-| **Docs cache** | Global self-building cheatsheets (`~/.lex/docs/`). Agents check distilled, version-verified API notes before guessing |
+| **Gateway** | 17 commands via `write_to_file` — zero user approval, zero shell quoting |
 | **Zero dependencies** | Pure markdown + one small Node script. No build step, no server, nothing to update |
 
 One plugin replaces the separate reasoning, style, and memory tools you'd otherwise
@@ -186,11 +183,19 @@ Requires Node 22+.
 ```bash
 node <lex-repo>/bin/lex.js init [dir]                # scaffold .lex/ from templates
 node <lex-repo>/bin/lex.js guard                      # scan for exposed secrets + DB anti-patterns
-node <lex-repo>/bin/lex.js search userTask overdue   # full-text, 10 lines max
+node <lex-repo>/bin/lex.js check                      # pre-flight: wip.md, index, guard
+node <lex-repo>/bin/lex.js tokens                     # session token usage + context budget
+node <lex-repo>/bin/lex.js search userTask overdue   # full-text, fuzzy + line numbers
+node <lex-repo>/bin/lex.js grep "TODO|FIXME"         # regex search (patterns FTS can't do)
 node <lex-repo>/bin/lex.js symbols src/App.tsx       # symbol list without reading the file
 node <lex-repo>/bin/lex.js links dashboard/tasks     # route + every frontend consumer
-node <lex-repo>/bin/lex.js docs <term>              # search global distilled docs cache
+node <lex-repo>/bin/lex.js recent 20                 # recently modified files from audit log
+node <lex-repo>/bin/lex.js errors                    # console errors captured from browser
+node <lex-repo>/bin/lex.js patch <file> <mode> ...   # surgical edit by anchor (saves tokens)
+node <lex-repo>/bin/lex.js ls [dir]                  # list files from index (instant)
+node <lex-repo>/bin/lex.js read <file> [start-end]   # read file with line numbers
 node <lex-repo>/bin/lex.js refresh                   # manual reindex (rarely needed)
+node <lex-repo>/bin/lex.js watch [port]              # server + file watcher, instant search
 node <lex-repo>/bin/lex.js serve [port]              # live viewer, defaults to 4747
 ```
 
@@ -199,127 +204,113 @@ connection strings (CRITICAL - exits with code 1 if found), and database
 anti-patterns like 1-to-1 tables, EAV, and settings tables (IMPORTANT).
 **Run it before every commit.**
 
-**`serve`** auto-picks the next free port (up to +8) if the requested one is busy -
-run it in several projects at once and each gets its own viewer.
+**`watch`** starts the viewer server with a file watcher. Files are re-indexed
+automatically on save (debounced 300ms). When `watch` is running, `lex search`
+routes through the server via HTTP — cutting latency from ~200ms to ~15ms.
 
 Large legacy folders: list path prefixes in `.lex/ignore` (one per line) to exclude
 them from indexing.
+
+### `patch` — surgical edits
+
+```bash
+# Insert after an anchor
+lex patch src/app.js after "const x = 1" --insert "const y = 2;"
+
+# Replace an anchor
+lex patch src/app.js replace "oldFunction()" --insert "newFunction()"
+
+# Compact pipe format (41% shorter than JSON)
+echo 'src/app.js|after|const x = 1|const y = 2;' | lex patch
+
+# JSON mode (for agents)
+lex patch '{"file":"src/app.js","anchor":"const x = 1","insertion":"const y = 2;","mode":"after"}'
+```
+
+**Smart features:** auto-anchor (shortest unique substring), fuzzy match (typo
+tolerance with similarity %), diff output on every patch, preview mode, multi-match
+context.
+
+**Safety:** `rm` moves files to `.lex/trash/` with a timestamp prefix. `mv` backs up
+the destination before overwriting. Both report the trash path for recovery.
+
+### Gateway: zero-approval lex commands
+
+The gateway lets agents use lex **without `run_command`** — no user approval,
+no shell quoting, no PowerShell escaping. The agent writes a request to
+`.lex/in/` via `write_to_file` (a native tool), the PostToolUse hook processes
+it, and the result is auto-injected as `additionalContext`.
+
+**Three input formats** (pick the lightest):
+
+```
+# 1. Empty file = no-arg command (filename IS the command, 21% less overhead)
+write_to_file('.lex/in/errors.json', '', true)
+
+# 2. Plain text = cmd + args (17% less overhead than JSON)
+write_to_file('.lex/in/r.json', 'search ValidationError')
+write_to_file('.lex/in/r.json', 'grep res\\.status|src/app.js')
+
+# 3. JSON = full control (backward compatible)
+write_to_file('.lex/in/req.json', '{"cmd":"search","args":["InputError"]}')
+```
+
+**17 commands available:** `search`, `symbols`, `grep`, `read`, `patch`,
+`insert`, `rename`, `delete`, `batch`, `diff`, `errors`, `undo`, `snapshot`,
+`refs`, `recent`, `links`, `guard`.
+
+| Feature | Gateway (`write_to_file`) | CLI (`run_command`) |
+|---------|--------------------------|---------------------|
+| User approval | **Never** | Every call |
+| Shell quoting | None | Required (PowerShell) |
+| Output injection | Auto (`additionalContext`) | Manual (read stdout) |
+| Batch support | Yes (1 call, N commands) | No (N calls) |
+| Token overhead | 42-50 tokens | 24-28 tokens |
+
+Gateway costs ~20 more raw tokens per call, but saves **all approval friction**
+and enables **batching** (2 commands in 1 call saves 24%).
 
 ---
 
 ## Viewer
 
 ```bash
-node <lex-repo>/bin/lex.js serve        # http://127.0.0.1:4747 (or next free port)
+node <lex-repo>/bin/lex.js serve        # http://127.0.0.1:4747
 node <lex-repo>/bin/lex.js serve 3000   # specific port
 ```
 
-A live mission-control dashboard for your project:
+Live mission-control dashboard: status, task list, full-text search, API link graph,
+schema ERD, knowledge pages, agent activity timeline. Dark/light theme, collapsible
+panels. Read-only and localhost-bound.
 
-- **Now panel** - live status, agent activity banner, current task list from `wip.md`
-- **Codebase panel** - file/symbol/link stats, full-text search, MCP suggestions
-- **Graph panel** - API-to-frontend link graph, filterable by URL, color-coded by HTTP method
-- **Schema panel** - tables, columns, FK relationships from real migrations. Fullscreen pannable/zoomable ERD canvas
-- **Memory panel** - knowledge pages with markdown rendering, session summaries, activity timeline
-
-**Dark/light theme** - moon/sun toggle in the header. Persists in `localStorage`.
-
-**Collapsible panels** - each panel has a collapse button. The **View** dropdown in
-the header hides/shows any panel. Layout reflows automatically. State persists in
-`localStorage`.
-
-Read-only and localhost-bound - never modifies your project.
+Details: [docs/viewer.md](docs/viewer.md)
 
 ---
 
 ## Skills
 
-16 skills, each a standalone `SKILL.md` that any agent can read:
+16 skills, each a standalone `SKILL.md` with a `HARD-GATE` — written answers required
+before proceeding. No gate, no code. Stack overlays (PHP, Rust, Python, TypeScript,
+Go) auto-detect at `lex init` and add language-specific tooling guidance.
 
-| Skill | Trigger | Purpose |
-|-------|---------|---------|
-| **using-lex** | Auto (session start) | Bootstrap - protocol, skill index, rules |
-| **brainstorming** | "let's build", "add feature" | Explore ideas before building |
-| **planning** | After brainstorming | Break specs into executable tasks |
-| **executing** | After planning | Work through plans with checkpoints |
-| **tdd** | Before implementation | Red-green-refactor |
-| **debugging** | Bug, test failure | Systematic root-cause analysis |
-| **verification** | Before claiming "done" | Prove work is complete with evidence |
-| **code-review** | After writing code | Quality, security, correctness review |
-| **efficient-code** | Always active | YAGNI, shortest diff, no bloat |
-| **design-intelligence** | Any UI/frontend work | Intentional design, never template-looking |
-| **docs-cache** | Session start | Global distilled API docs, version-verified |
-| **subagent-dispatch** | 2+ independent tasks | Parallel agent execution |
-| **finishing-branch** | Before merge/PR | PR creation, merge, cleanup |
-| **context-health** | Init, maintenance | Manage `.lex/`, compress, prevent overflow |
-| **security** | Any code, any file | Always active - never expose secrets |
-| **database-architecture** | Designing schema | Wide tables, denormalize-first, no EAV |
-
-### Stack overlays
-
-`lex init` auto-detects your stack and loads matching overlays alongside each skill:
-
-| Overlay | Languages | What it adds |
-|---------|-----------|--------------|
-| **php** | PHP, Laravel, Symfony | Xdebug/Telescope, Pest/PHPUnit, mass assignment checks, N+1 detection |
-| **rust** | Rust | `dbg!`/clippy/miri, `#[test]` patterns, `unsafe` audits, borrow check review |
-| **python** | Python, Django, FastAPI | pdb/breakpoint, pytest fixtures, mutable default arg checks |
-| **typescript** | TS, React, Next.js, Vue | devtools, Vitest/Jest, `any`/`as` review, async correctness |
-| **go** | Go | delve, table-driven tests, goroutine leak checks, `err` handling review |
-
-~30-50 lines each, loaded on-demand only when the skill fires.
+Full skill catalog: [docs/skills.md](docs/skills.md)
 
 ---
 
 ## How It Works
 
-### The `.lex/` folder
+`.lex/` folder in each project root stores: `status.md` (current state), `wip.md`
+(work-in-progress, exists only during active work), `INDEX.md` (knowledge table of
+contents), `audit.log` (agent activity trail), knowledge pages, and session
+summaries. Any agent that can read markdown can use it.
 
-Created in each project root. Any agent that can read markdown can use it.
+**Crash recovery:** `wip.md` checkpoints let the next agent resume exactly where the
+last one left off — same knowledge, same discipline, on a completely different tool.
 
-```
-.lex/
-  status.md       Current state (~30 lines). Rewritten each session.
-  INDEX.md        Table of contents - what knowledge exists.
-  wip.md          Work-in-progress. Exists ONLY during active work.
-  audit.log       timestamp | agent | platform | action | target
-  sessions/       Compressed conversation summaries (one per day)
-  pages/
-    stack.md        Tech stack, folder structure, naming conventions
-    run.md          How to install, boot, test, and access the app
-    mistakes.md     What broke, why, never repeat
-    patterns.md     What works in this project
-    design.md       Design rules for this project
-    rules.md        Agent output rules
-```
+**Enforcement:** PostToolUse hook warns if `wip.md` missing, auto-logs edits. Git
+pre-commit hook runs `lex guard` and blocks on CRITICAL violations.
 
-### Token budget
-
-| File | When loaded | Lines |
-|------|-------------|-------|
-| `status.md` | Every session | ~30 |
-| `INDEX.md` | Every session | ~30 |
-| Relevant pages | Only when task needs them | ~100 max |
-| `wip.md` | Only during active work | ~40 |
-| **Total** | | **~200 max** |
-
-### Crash recovery
-
-When an agent starts a task, it creates `wip.md` with the plan and progress. If the
-session disconnects, the next agent finds `wip.md` and knows exactly what was being
-worked on, which steps are done, which files were modified, and where to resume.
-
-When work completes normally, `wip.md` is deleted. If it exists at session start,
-something was interrupted.
-
-### Agent audit trail
-
-```
-2026-06-29 14:30 | claude-sonnet-4-6 | claude-code | rewrite | components/Dashboard.tsx
-2026-06-29 15:00 | gpt-4o | windsurf | create | tests/DashboardTest.php
-```
-
-Any agent can see who did what, when, and on which platform.
+Full architecture: [docs/how-it-works.md](docs/how-it-works.md)
 
 ---
 
@@ -361,64 +352,14 @@ lex works fully without it - skills prefer the graph when connected, fall back t
 
 ---
 
-## File Structure
+## Docs
 
-<details>
-<summary>Click to expand</summary>
-
-```
-lex/
-  .claude-plugin/plugin.json       # Claude Code manifest
-  .codex-plugin/plugin.json        # Codex manifest
-  .cursor-plugin/plugin.json       # Cursor manifest
-  .kimi-plugin/plugin.json         # Kimi Code manifest
-  .windsurf/plugin.json            # Windsurf manifest
-  .antigravity-plugin/plugin.json  # Antigravity manifest
-  AGENTS.md                        # Windsurf / Copilot instructions
-  ANTIGRAVITY.md                   # Antigravity context file
-  CLAUDE.md                        # Claude Code instructions
-  GEMINI.md                        # Gemini CLI instructions
-  gemini-extension.json            # Gemini extension manifest
-  LICENSE                          # Apache 2.0
-  README.md                        # This file
-
-  hooks/
-    hooks.json                     # Claude Code hook config
-    hooks-codex.json               # Codex hook config
-    hooks-cursor.json              # Cursor hook config
-    run-hook.cmd                   # Polyglot dispatcher (Windows + Unix)
-    session-start                  # Bootstrap script
-    session-start-codex            # Codex-specific bootstrap
-
-  skills/
-    using-lex/SKILL.md             # Bootstrap (loaded every session)
-    using-lex/references/          # Per-platform tool mappings
-    brainstorming/SKILL.md
-    planning/SKILL.md
-    executing/SKILL.md
-    tdd/SKILL.md
-    tdd/overlays/                  php.md rust.md python.md typescript.md go.md
-    debugging/SKILL.md
-    debugging/overlays/            php.md rust.md python.md typescript.md go.md
-    verification/SKILL.md
-    code-review/SKILL.md
-    code-review/overlays/          php.md rust.md python.md typescript.md go.md
-    efficient-code/SKILL.md
-    efficient-code/overlays/       php.md rust.md python.md typescript.md go.md
-    security/SKILL.md              # Always-active: never inline secrets
-    database-architecture/SKILL.md # Wide tables, denormalize-first
-    design-intelligence/SKILL.md
-    docs-cache/SKILL.md
-    subagent-dispatch/SKILL.md
-    finishing-branch/SKILL.md
-    context-health/SKILL.md
-
-  templates/                       # .lex/ templates (copied on init)
-    STATUS.md  INDEX.md  wip.md
-    pages/
-      stack.md  run.md  mistakes.md  patterns.md  design.md  rules.md
-```
-</details>
+- [benchmarks.md](docs/benchmarks.md) — speed, token savings, gateway overhead, test results
+- [skills.md](docs/skills.md) — full skill catalog, stack overlays
+- [how-it-works.md](docs/how-it-works.md) — `.lex/` folder, crash recovery, enforcement, file structure
+- [viewer.md](docs/viewer.md) — panel details, console error capture
+- [upgrading.md](docs/upgrading.md) — safe upgrade path, no data loss
+- [CHANGELOG.md](CHANGELOG.md) — version history
 
 ---
 
@@ -426,7 +367,7 @@ lex/
 
 - Cross-platform plugin delivery pattern inspired by [superpowers](https://github.com/obra/superpowers) by Jesse Vincent (MIT)
 - Efficient code ladder inspired by [ponytail](https://github.com/DietrichGebert/ponytail)
-- Token optimization concepts informed by [sipcode](https://github.com/Anuj7411/sipcode)
+
 
 All skill content is original.
 

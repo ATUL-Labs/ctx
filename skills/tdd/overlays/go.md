@@ -47,7 +47,7 @@ Stack-specific TDD patterns. Load alongside tdd/SKILL.md when language is Go.
 ## Rules
 
 - Table-driven is the Go way. One test function, many cases via sub-tests.
-- File naming: `foo_test.go` next to `foo.go`. Same package for white-box,
+- File naming: `foo_test.go` next to `qux.go`. Same package for white-box,
   `foo_test` package for black-box.
 - `t.Fatal` stops the test, `t.Error` continues. Use `Fatal` for setup
   failures, `Error` for multiple assertions.
