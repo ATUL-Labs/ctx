@@ -1135,18 +1135,18 @@ function initCmd(dir) {
 
   copyIfMissing(path.join(templates, 'agent.json'), path.join(lex, 'agent.json'), '.lex/agent.json');
 
-  // Copy agent instruction files so agents discover lex in this project
-  copyIfMissing(path.join(pluginRoot, 'AGENTS.md'), path.join(dir, 'AGENTS.md'), 'AGENTS.md');
-  copyIfMissing(path.join(pluginRoot, 'CLAUDE.md'), path.join(dir, 'CLAUDE.md'), 'CLAUDE.md');
-  copyIfMissing(path.join(pluginRoot, 'GEMINI.md'), path.join(dir, 'GEMINI.md'), 'GEMINI.md');
-  copyIfMissing(path.join(pluginRoot, 'ANTIGRAVITY.md'), path.join(dir, 'ANTIGRAVITY.md'), 'ANTIGRAVITY.md');
+  // Copy agent instruction files into .lex/ (keeps project root clean)
+  copyIfMissing(path.join(pluginRoot, 'AGENTS.md'), path.join(lex, 'AGENTS.md'), '.lex/AGENTS.md');
+  copyIfMissing(path.join(pluginRoot, 'CLAUDE.md'), path.join(lex, 'CLAUDE.md'), '.lex/CLAUDE.md');
+  copyIfMissing(path.join(pluginRoot, 'GEMINI.md'), path.join(lex, 'GEMINI.md'), '.lex/GEMINI.md');
+  copyIfMissing(path.join(pluginRoot, 'ANTIGRAVITY.md'), path.join(lex, 'ANTIGRAVITY.md'), '.lex/ANTIGRAVITY.md');
 
-  // Copy skills directory so agents can read skill files from the project
+  // Copy skills directory into .lex/skills/ so agents can read skill files
   const skillsSrc = path.join(pluginRoot, 'skills');
-  const skillsDest = path.join(dir, 'skills');
+  const skillsDest = path.join(lex, 'skills');
   if (fs.existsSync(skillsSrc) && !fs.existsSync(skillsDest)) {
     copyDir(skillsSrc, skillsDest);
-    created.push('skills/ (' + countFiles(skillsDest) + ' files)');
+    created.push('.lex/skills/ (' + countFiles(skillsDest) + ' files)');
   }
 
   const gitDir = path.join(dir, '.git');

@@ -29,7 +29,7 @@ fi
 WRAPPED="<EXTREMELY_IMPORTANT>
 You have lex - the universal coding companion.
 
-Below is your condensed bootstrap. For the full protocol, read skills/using-lex/SKILL.md. For other skills, use the Skill tool or read skills/<skill-name>/SKILL.md:"
+Below is your condensed bootstrap. For the full protocol, read .lex/skills/using-lex/SKILL.md. For other skills, use the Skill tool or read .lex/skills/<skill-name>/SKILL.md:"
 
 ---
 $CONTENT

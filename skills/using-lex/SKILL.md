@@ -87,7 +87,7 @@ you the 10 lines you need.** The index is the shared brain. Use it.
 9. Do NOT bulk-load all pages. Token budget for .lex/ content: under 200 lines per session.
 10. **Stack overlay**: check `.lex/pages/stack.md` for the detected overlay key
     (php, rust, python, typescript, go). When you invoke ANY skill that has an
-    overlays/ directory, also load `skills/<skill>/overlays/<overlay>.md`
+    overlays/ directory, also load `.lex/skills/<skill>/overlays/<overlay>.md`
     alongside the skill's SKILL.md. The overlay adds stack-specific tools,
     patterns, bug catalogs, and review checks. ~30-50 extra lines, loaded only
     when that skill fires. If no overlay exists for the detected stack, proceed

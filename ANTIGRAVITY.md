@@ -1,2 +1,2 @@
-@./skills/using-lex/SKILL.md
-@./skills/using-lex/references/antigravity-tools.md
+@./.lex/skills/using-lex/SKILL.md
+@./.lex/skills/using-lex/references/antigravity-tools.md

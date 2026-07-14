@@ -23,16 +23,16 @@ When the user types `/lex`, invoke the Skill tool with `skill: "using-lex"` befo
 Before grep-ing or reading whole files, use the lex index (zero tokens, instant):
 
 ```
-node bin/lex.js search <terms>     # find where something is (returns lines, not files)
-node bin/lex.js symbols <file>     # see what's in a file without reading it
-node bin/lex.js links <route>      # find route + every frontend consumer
-node bin/lex.js refs <symbol>      # find all references to a function/class/variable
-node bin/lex.js status             # one-command health check (files, wip, guard)
-node bin/lex.js diff               # what files changed since last index
-node bin/lex.js docs <term>        # search distilled API docs cache
-node bin/lex.js guard              # scan for exposed secrets + DB anti-patterns
-node bin/lex.js check              # pre-flight: wip.md exists, index fresh, no guard violations
-node bin/lex.js tokens             # session token usage (sent/received, files read/written)
+lex search <terms>     # find where something is (returns lines, not files)
+lex symbols <file>     # see what's in a file without reading it
+lex links <route>      # find route + every frontend consumer
+lex refs <symbol>      # find all references to a function/class/variable
+lex status             # one-command health check (files, wip, guard)
+lex diff               # what files changed since last index
+lex docs <term>        # search distilled API docs cache
+lex guard              # scan for exposed secrets + DB anti-patterns
+lex check              # pre-flight: wip.md exists, index fresh, no guard violations
+lex tokens             # session token usage (sent/received, files read/written)
 ```
 
 Do NOT grep the whole project and read 500-line files when one `lex search` gives you the 10 lines you need. The index is the shared brain. Use it.
@@ -43,7 +43,7 @@ Do NOT grep the whole project and read 500-line files when one `lex search` give
 2. Rewrite `.lex/status.md` with current state (~30 lines max)
 3. Append session summary to `.lex/sessions/YYYY-MM-DD.md`
 4. Extract learnings to `pages/mistakes.md`, `pages/patterns.md`, or `pages/design.md`
-5. Run `node bin/lex.js guard` before committing - never commit exposed secrets
+5. Run `lex guard` before committing - never commit exposed secrets
 
 ## Enforcement (hooks enforce, instructions suggest)
 

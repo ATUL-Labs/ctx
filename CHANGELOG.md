@@ -2,6 +2,18 @@
 
 All notable changes to lex. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.1.20] - 2026-07-14
+
+### Changed
+- **Everything inside `.lex/`** - `lex init` now copies skills to `.lex/skills/`
+  and agent files (AGENTS.md, CLAUDE.md, GEMINI.md, ANTIGRAVITY.md) to `.lex/`.
+  Project root stays clean - only `.lex/` and `.gitignore` are added.
+- **All path references updated** - AGENTS.md, CLAUDE.md, BOOTSTRAP.md, SKILL.md,
+  GEMINI.md, ANTIGRAVITY.md, and session-start hook now reference `.lex/skills/`
+  instead of `skills/`.
+- **CLI commands use `lex` not `node bin/lex.js`** - all instruction files now
+  use the `lex` command directly since it's installed globally.
+
 ## [0.1.19] - 2026-07-14
 
 ### Added
