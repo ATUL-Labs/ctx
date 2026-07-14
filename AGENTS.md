@@ -72,6 +72,7 @@ The result appears in your context immediately. No commands, no PowerShell quoti
 | `batch` | `[cmd1,cmd2,...]` | `{"cmd":"batch","args":[{"cmd":"search","args":["err"]},{"cmd":"symbols","args":["src/app.js"]}]}` |
 | `diff` | `[]` | `{"cmd":"diff","args":[]}` |
 | `errors` | `[]` | `{"cmd":"errors","args":[]}` |
+| `audit` | `["url1","url2"?]` | `{"cmd":"audit","args":[]}` (omit URLs for auto-detect) |
 | `links` | `["/api/users"?]` | `{"cmd":"links","args":["/api/users"]}` (omit arg for all) |
 | `undo` | `[]` | `{"cmd":"undo","args":[]}` |
 | `snapshot` | `["save","file1","file2"]` | `{"cmd":"snapshot","args":["save","src/app.js"]}` |

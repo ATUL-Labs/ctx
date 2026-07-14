@@ -19,3 +19,4 @@ index.html
 .lex/in/
 .lex/out/
 .lex/server.json
+.lex/audit.json

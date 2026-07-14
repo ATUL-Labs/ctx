@@ -2,6 +2,37 @@
 
 All notable changes to lex. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.1.15] - 2026-07-14
+
+### Added
+- **Browser audit with crawling** - `lex audit` now crawls all internal links
+  by default (BFS, depth 2, max 30 pages). Extracts `<a href>` links from each
+  page via CDP and visits them all in a single browser tab for cookie persistence.
+- **Login automation** - `.lex/audit.json` config supports login before crawling:
+  URL, form field selectors/values, submit selector. Lex logs in first, then
+  crawls authenticated pages with the session cookie.
+- **CLI crawl flags** - `--no-crawl`, `--depth=N`, `--max-pages=N` for controlling
+  crawl behavior from the command line.
+- **Port probing** - CDP debugging port now probes 4747-4755 for availability
+  instead of hardcoding, avoiding conflicts with stale processes.
+
+### Changed
+- **Single-tab crawl session** - entire crawl uses one browser tab so login
+  cookies persist across all pages. Previously each URL got a new tab.
+- **Browser target creation** - switched from deprecated `/json/new` HTTP endpoint
+  to `Target.createTarget` via browser-level WebSocket (Chrome 150+ compatible).
+- **WebSocket event handling** - migrated from Node EventEmitter API to standard
+  `addEventListener`/`removeEventListener` for Node 22 built-in `WebSocket`.
+- **Test badge** - updated to 97 tests passing.
+
+### Fixed
+- `targets.find is not a function` - Chrome's `/json/list` can return non-array
+  responses; added `Array.isArray` guard.
+- `ws.on is not a function` - Node 22 built-in `WebSocket` doesn't extend
+  `EventEmitter`; all event handlers updated to standard DOM API.
+- Port conflicts when 4748 was occupied by stale processes; now probes for
+  available port before launching browser.
+
 ## [0.1.14] - 2026-07-13
 
 ### Added

@@ -875,12 +875,47 @@ async function main() {
       process.stderr.write('usage: lex snapshot [save|restore|list] [files...]\n');
       process.exit(1);
     }
+  } else if (cmd === 'audit') {
+    const { runAudit, formatAuditResult } = require('../lib/browser-audit');
+    const { detectUrls } = require('../lib/url-detect');
+    const explicitUrls = args.filter(a => a.startsWith('http'));
+    const waitArg = args.find(a => a.startsWith('--wait='));
+    const waitMs = waitArg ? parseInt(waitArg.split('=')[1], 10) : 3000;
+    const jsonOut = args.includes('--json');
+    const noCrawl = args.includes('--no-crawl');
+    const depthArg = args.find(a => a.startsWith('--depth='));
+    const maxDepth = depthArg ? parseInt(depthArg.split('=')[1], 10) : undefined;
+    const pagesArg = args.find(a => a.startsWith('--max-pages='));
+    const maxPages = pagesArg ? parseInt(pagesArg.split('=')[1], 10) : undefined;
+
+    let urls = explicitUrls;
+    if (!urls.length) {
+      process.stderr.write('detecting dev server URLs...\n');
+      urls = await detectUrls(root);
+    }
+
+    if (!urls.length) {
+      process.stderr.write('no live dev server found. Start your dev server or pass URLs explicitly:\n');
+      process.stderr.write('  lex audit http://localhost:3000 http://localhost:5173\n');
+      process.exit(1);
+    }
+
+    process.stderr.write('auditing: ' + urls.join(', ') + (noCrawl ? ' (no crawl)' : ' (crawling)') + '\n');
+    const result = await runAudit(urls, { waitMs, root, crawl: !noCrawl, maxDepth, maxPages });
+
+    if (jsonOut) {
+      process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+    } else {
+      process.stdout.write(formatAuditResult(result) + '\n');
+    }
+
+    if (!result.ok) process.exit(1);
   } else if (cmd === 'serve') {
     const port = parseInt(args[0], 10) || 4747;
     serveWithPortFallback(require('../lib/serve').createServer(root), port, port + 8, root);
     return;
   } else {
-    process.stderr.write('usage: lex <init|guard|check|tokens|status|diff|refs|refresh|search|symbols|links|docs|grep|recent|errors|patch|ls|read|write|rm|mv|stat|undo|snapshot|update|watch|serve|hook-update>\n');
+    process.stderr.write('usage: lex <init|guard|check|tokens|status|diff|refs|refresh|search|symbols|links|docs|grep|recent|errors|audit|patch|ls|read|write|rm|mv|stat|undo|snapshot|update|watch|serve|hook-update>\n');
     process.exit(1);
   }
 }
@@ -1019,7 +1054,7 @@ function initCmd(dir) {
   }
 
   const giPath = path.join(dir, '.gitignore');
-  const needed = ['.lex/index.db*', '.lex/live.json', '.lex/token-ledger.json', '.lex/trash/', '.lex/snapshots/', '.lex/in/', '.lex/out/', '.lex/server.json', '.env', '.env.*', '!.env.example', '!.env.template'];
+  const needed = ['.lex/index.db*', '.lex/live.json', '.lex/token-ledger.json', '.lex/trash/', '.lex/snapshots/', '.lex/in/', '.lex/out/', '.lex/server.json', '.lex/audit.json', '.env', '.env.*', '!.env.example', '!.env.template'];
   let gi = '';
   try { gi = fs.readFileSync(giPath, 'utf8'); } catch {}
   let giChanged = false;

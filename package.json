@@ -1,9 +1,12 @@
 {
   "name": "@atul-labs/lex",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "Universal coding companion - reasoning, efficient code, design intelligence, project memory, crash recovery.",
   "author": "pulak-ranjan (https://github.com/pulak-ranjan)",
   "license": "Apache-2.0",
+  "bin": {
+    "lex": "bin/lex.js"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/ATUL-Labs/lex.git"
@@ -26,6 +29,31 @@
     "cursor",
     "windsurf",
     "gemini",
-    "antigravity"
+    "antigravity",
+    "browser-audit",
+    "headless",
+    "cdp",
+    "developer-tools"
+  ],
+  "files": [
+    "bin/",
+    "lib/",
+    "skills/",
+    "hooks/",
+    "templates/",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "GEMINI.md",
+    "ANTIGRAVITY.md",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    ".claude-plugin/",
+    ".cursor-plugin/",
+    ".windsurf/",
+    ".codex-plugin/",
+    ".kimi-plugin/",
+    ".antigravity-plugin/",
+    "gemini-extension.json"
   ]
 }

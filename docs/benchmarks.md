@@ -91,20 +91,21 @@ then load content via `WHERE path IN (...)`.
 | 106 files | loads 106 rows (426 KB) | loads ~5 rows (~20 KB) | ~21x |
 | 45K files | loads 45K rows (~180 MB) | loads ~10 rows (~40 KB) | ~4,500x |
 
-## Test suite (v0.1.14)
+## Test suite (v0.1.15)
 
 | Suite | Tests | Status |
 |-------|-------|--------|
 | Core (`node --test`) | 51 | all pass |
+| Browser audit (`node --test`) | 13 | all pass |
 | Gateway commands | 15 | all pass |
 | Input formats | 11 | all pass |
 | Error capture | 7 | all pass (with server) |
-| **Total** | **84** | **0 failures** |
+| **Total** | **97** | **0 failures** |
 
 Run all tests:
 ```bash
-node --test tests/cli.test.js tests/indexer.test.js tests/init.test.js tests/serve.test.js tests/extract.test.js
+node --test tests/cli.test.js tests/indexer.test.js tests/init.test.js tests/serve.test.js tests/extract.test.js tests/test-audit.js
 node tests/test-gateway.js
 node tests/test-formats.js
-node tests/benchmark.js
+node tests/test-errors.js
 ```

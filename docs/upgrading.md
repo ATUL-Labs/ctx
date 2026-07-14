@@ -116,6 +116,15 @@ files were added (it only creates files that don't exist yet).
 
 See [CHANGELOG.md](../CHANGELOG.md) for what changed in each version.
 
+### v0.1.14 → v0.1.15
+
+**No data migration needed.** Changes are all in plugin code:
+
+- Browser audit now crawls all internal pages by default (BFS, depth 2, max 30).
+- Login automation via `.lex/audit.json` (gitignored, may contain credentials).
+- CDP port selection now probes for availability instead of hardcoding.
+- WebSocket event handlers migrated to standard DOM API for Node 22 compatibility.
+
 ### v0.1.13 → v0.1.14
 
 **No data migration needed.** Changes are all in plugin code:

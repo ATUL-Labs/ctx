@@ -7,7 +7,8 @@
 Cross-agent project memory, enforcement rules, and a live viewer.  
 Works on Claude Code, Cursor, Windsurf, Codex, Gemini, Copilot, Antigravity, Kimi, and any agent that can read files.
 
-[![Tests](https://img.shields.io/badge/tests-84%20pass-brightgreen)](#)
+[![Tests](https://img.shields.io/badge/tests-97%20pass-brightgreen)](#)
+[![Version](https://img.shields.io/badge/version-0.1.15-blue)](#)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-green)](#)
 [![Dependencies](https://img.shields.io/badge/dependencies-zero-success)](#)
@@ -101,10 +102,11 @@ Full benchmarks: [docs/benchmarks.md](docs/benchmarks.md)
 | **Project memory** | `.lex/` folder with knowledge pages, session summaries, audit trail. Any agent that can read a file gets the full picture |
 | **lex-index** | Self-maintaining SQLite index - `search`, `symbols`, API-to-frontend `links`, DB schema map. Zero tokens to maintain |
 | **lex guard** | Scans for exposed secrets (CRITICAL) and DB anti-patterns (IMPORTANT) before every commit |
+| **Browser audit** | `lex audit` launches headless Chrome/Edge, crawls all internal pages, captures console errors + network failures. Supports login automation via `.lex/audit.json` |
 | **Live viewer** | `lex serve` opens a mission-control dashboard - live status, task list, knowledge, schema, search, agent activity |
 | **Reasoning skills** | 16 skills: brainstorming, planning, TDD, debugging, verification, code review, and more |
 | **Stack overlays** | PHP? Agent uses Xdebug. Rust? Agent uses `dbg!` and audits `unsafe`. 5 overlay packs auto-detect at `lex init` |
-| **Gateway** | 17 commands via `write_to_file` — zero user approval, zero shell quoting |
+| **Gateway** | 18 commands via `write_to_file` — zero user approval, zero shell quoting |
 | **Zero dependencies** | Pure markdown + one small Node script. No build step, no server, nothing to update |
 
 One plugin replaces the separate reasoning, style, and memory tools you'd otherwise
@@ -115,6 +117,20 @@ stitch together - and it works identically on **9+ platforms**.
 ## Quick Start
 
 ### 1. Install
+
+**One-line (npm global — recommended):**
+```bash
+npm install -g @atul-labs/lex
+```
+Then use `lex` from anywhere:
+```bash
+lex init          # initialize .lex/ in your project
+lex serve         # live viewer at http://localhost:4747
+lex audit         # headless browser audit of your dev server
+lex guard         # scan for exposed secrets before commit
+```
+
+**Or per-platform plugin:**
 
 **Claude Code:**
 ```bash
@@ -136,7 +152,13 @@ gemini extensions install github:ATUL-Labs/lex
 **Any agent:** If it can read files, lex works. Point it at `skills/using-lex/SKILL.md`.
 
 <details>
-<summary>More install options (per-project, Trae, manual)</summary>
+<summary>More install options (per-project, clone, Trae, manual)</summary>
+
+#### Per-project (clone and link)
+```bash
+git clone https://github.com/ATUL-Labs/lex.git
+cd lex && npm link   # makes `lex` available globally
+```
 
 #### Per-project (drop into codebase)
 ```bash
@@ -191,6 +213,7 @@ node <lex-repo>/bin/lex.js symbols src/App.tsx       # symbol list without readi
 node <lex-repo>/bin/lex.js links dashboard/tasks     # route + every frontend consumer
 node <lex-repo>/bin/lex.js recent 20                 # recently modified files from audit log
 node <lex-repo>/bin/lex.js errors                    # console errors captured from browser
+node <lex-repo>/bin/lex.js audit [urls...]           # headless browser audit (auto-detects dev server)
 node <lex-repo>/bin/lex.js patch <file> <mode> ...   # surgical edit by anchor (saves tokens)
 node <lex-repo>/bin/lex.js ls [dir]                  # list files from index (instant)
 node <lex-repo>/bin/lex.js read <file> [start-end]   # read file with line numbers
@@ -234,6 +257,68 @@ context.
 **Safety:** `rm` moves files to `.lex/trash/` with a timestamp prefix. `mv` backs up
 the destination before overwriting. Both report the trash path for recovery.
 
+### `audit` — headless browser runtime check
+
+```bash
+# Auto-detect dev server, crawl all pages (default: depth 2, max 30 pages)
+lex audit
+
+# Explicit URLs
+lex audit http://localhost:3000 http://localhost:5173
+
+# Single page, no crawling
+lex audit --no-crawl http://localhost:3000
+
+# Deep crawl (depth 4, up to 100 pages)
+lex audit --depth=4 --max-pages=100
+
+# JSON output for agents
+lex audit --json
+
+# Wait longer for slow pages
+lex audit --wait=5000
+```
+
+Launches your installed Chrome/Edge/Brave in headless mode, visits each URL,
+and captures:
+- **Console errors** — `console.error`, uncaught exceptions, unhandled rejections
+- **Network errors** — HTTP 4xx/5xx responses, failed resource loads
+- **Console warnings** — `console.warn`
+
+**Crawling**: By default, after each page loads, lex extracts all `<a href>` links
+on the same origin and visits them too (BFS, up to `--depth` and `--max-pages`).
+This catches errors on every page — dashboard, settings, login, etc.
+
+**Login support**: Create `.lex/audit.json` (gitignored — may contain credentials):
+
+```json
+{
+  "login": {
+    "url": "/login",
+    "fields": {
+      "#email": "test@example.com",
+      "#password": "testpass123"
+    },
+    "submit": "button[type=submit]"
+  },
+  "crawl": true,
+  "maxDepth": 3,
+  "maxPages": 50,
+  "waitMs": 3000
+}
+```
+
+Lex logs in first, gets the session cookie, then crawls all authenticated pages.
+A single browser tab is reused for the entire session so cookies persist.
+
+Auto-detects browser path on Windows, macOS, Linux, and WSL. Zero dependencies —
+uses Chrome DevTools Protocol over WebSocket (built into Node 22).
+
+Via gateway (no approval needed):
+```
+write_to_file('.lex/in/audit.json', '', true)  # auto-detect URLs, crawl all pages
+```
+
 ### Gateway: zero-approval lex commands
 
 The gateway lets agents use lex **without `run_command`** — no user approval,
@@ -255,9 +340,9 @@ write_to_file('.lex/in/r.json', 'grep res\\.status|src/app.js')
 write_to_file('.lex/in/req.json', '{"cmd":"search","args":["InputError"]}')
 ```
 
-**17 commands available:** `search`, `symbols`, `grep`, `read`, `patch`,
-`insert`, `rename`, `delete`, `batch`, `diff`, `errors`, `undo`, `snapshot`,
-`refs`, `recent`, `links`, `guard`.
+**18 commands available:** `search`, `symbols`, `grep`, `read`, `patch`,
+`insert`, `rename`, `delete`, `batch`, `diff`, `errors`, `audit`, `undo`,
+`snapshot`, `refs`, `recent`, `links`, `guard`.
 
 | Feature | Gateway (`write_to_file`) | CLI (`run_command`) |
 |---------|--------------------------|---------------------|
@@ -318,6 +403,7 @@ Full architecture: [docs/how-it-works.md](docs/how-it-works.md)
 
 | Platform | How it activates | Install |
 |----------|-----------------|---------|
+| **Any CLI** | `lex` global command | `npm install -g @atul-labs/lex` |
 | **Claude Code** | Shell hook at session start | `claude plugin install github:ATUL-Labs/lex` |
 | **Codex** | Shell hook at session start | `codex plugin install github:ATUL-Labs/lex` |
 | **Cursor** | Auto-detected from manifest | Drop in project root |
