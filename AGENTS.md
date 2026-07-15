@@ -22,6 +22,7 @@ Before grep-ing or reading whole files, use the lex index (zero tokens, instant)
 
 ```
 lex search <terms>     # find where something is (returns lines, not files)
+lex memory <terms>     # search only .lex/pages/ (mistakes, patterns, design)
 lex symbols <file>     # see what's in a file without reading it
 lex links <route>      # find route + every frontend consumer
 lex refs <symbol>      # find all references to a function/class/variable
@@ -62,6 +63,7 @@ The result appears in your context immediately. No commands, no PowerShell quoti
 | cmd | args | example |
 |-----|------|---------|
 | `search` | `["terms"]` | `{"cmd":"search","args":["InputError"]}` |
+| `memory` | `["terms"]` | `{"cmd":"memory","args":["InputError"]}` |
 | `symbols` | `["file.js"]` | `{"cmd":"symbols","args":["src/app.js"]}` |
 | `grep` | `["pattern","file?"]` | `{"cmd":"grep","args":["res\\.status","src/app.js"]}` |
 | `read` | `["file","start-end?"]` | `{"cmd":"read","args":["src/app.js","10-20"]}` |

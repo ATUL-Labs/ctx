@@ -796,6 +796,11 @@ async function main() {
     grepCmd(root, db, pattern, fileFilter);
   } else if (cmd === 'errors') {
     errorsCmd(root);
+  } else if (cmd === 'memory' && args.length) {
+    if (shouldRefresh(db)) refresh(db, root);
+    const rows = ftsRows(db, args, 20, undefined, root, '.lex/pages');
+    for (const r of rows) process.stdout.write(`${r.path}: ${r.snip.replace(/\s+/g, ' ')}\n`);
+    if (!rows.length) process.stdout.write('no memory matches\n');
   } else if (cmd === 'patch') {
     patchCmd(root, args);
   } else if (cmd === 'ls') {
@@ -961,7 +966,7 @@ async function main() {
     serveWithPortFallback(require('../lib/serve').createServer(root), port, port + 8, root);
     return;
   } else {
-    process.stderr.write('usage: lex <init|guard|check|tokens|status|diff|refs|refresh|search|symbols|links|docs|grep|recent|errors|audit|patch|ls|read|write|rm|mv|stat|undo|snapshot|update|watch|serve|hook-update>\n');
+    process.stderr.write('usage: lex <init|guard|check|tokens|status|diff|refs|refresh|search|symbols|links|docs|grep|recent|errors|memory|audit|patch|ls|read|write|rm|mv|stat|undo|snapshot|update|watch|serve|hook-update>\n');
     process.exit(1);
   }
 }

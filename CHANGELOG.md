@@ -2,6 +2,23 @@
 
 All notable changes to lex. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.1.21] - 2026-07-15
+
+### Fixed
+- **SQL files now indexed automatically** - `.sql` was missing from `TEXT_EXT`,
+  so SQL files were never indexed despite having `extractSchemaSql` ready.
+  Now `.sql`, `.html`, `.json`, `.xml`, `.toml`, `.ini`, `.txt`, `.env`,
+  `.rb`, `.go`, `.rs`, `.java`, `.c`, `.h`, `.cpp`, `.cs`, `.graphql`, `.prisma`,
+  `.svelte`, `.astro`, `.twig`, `.ejs`, `.hbs`, `.pug`, and many more are indexed.
+- **Watcher import bug fixed** - `watcher.js` imported `updateFile` from
+  `./extract` but it's exported from `./indexer`. The watcher was silently
+  failing, never updating files on change. Now fixed.
+
+### Added
+- **`lex memory <terms>`** - searches only `.lex/pages/` knowledge files
+  (mistakes, patterns, design, rules, run, stack). Powered by FTS5 full-text
+  search. Also available via gateway: `{"cmd":"memory","args":["ValidationError"]}`.
+
 ## [0.1.20] - 2026-07-14
 
 ### Changed

@@ -3,16 +3,18 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 const { isTextFile, shouldSkipDir, extractSymbols, extractLinks, extractSchema, normalizeUrl } = require('../lib/extract');
 
-test('isTextFile accepts code and md, rejects binaries and minified', () => {
+test('isTextFile accepts code, md, sql, html, json; rejects binaries and minified', () => {
   assert.equal(isTextFile('app/Models/Account.php'), true);
   assert.equal(isTextFile('src/App.tsx'), true);
   assert.equal(isTextFile('README.md'), true);
+  assert.equal(isTextFile('migrations/create_users.sql'), true);
+  assert.equal(isTextFile('page.html'), true);
+  assert.equal(isTextFile('export.json'), true);
+  assert.equal(isTextFile('schema.graphql'), true);
+  assert.equal(isTextFile('schema.prisma'), true);
   assert.equal(isTextFile('logo.png'), false);
   assert.equal(isTextFile('vendor.min.js'), false);
   assert.equal(isTextFile('Makefile'), false);
-  assert.equal(isTextFile('page.html'), false);
-  assert.equal(isTextFile('dump.sql'), false);
-  assert.equal(isTextFile('export.json'), false);
 });
 
 test('shouldSkipDir skips heavy dirs', () => {
