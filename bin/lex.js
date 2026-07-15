@@ -566,11 +566,14 @@ function errorsCmd(root) {
           try {
             const ping = JSON.parse(body);
             if (ping.output === 'pong' && ping.root && path.resolve(ping.root) === path.resolve(root)) {
+              let done = 0;
+              const total = 2;
+              function checkDone() { if (++done >= total) resolve(); }
+
+              // Fetch console errors
               const req2 = http.get({
-                hostname: '127.0.0.1',
-                port,
-                path: '/api/console-errors',
-                timeout: 500,
+                hostname: '127.0.0.1', port,
+                path: '/api/console-errors', timeout: 500,
               }, (res2) => {
                 let body2 = '';
                 res2.on('data', (d) => body2 += d);
@@ -588,13 +591,41 @@ function errorsCmd(root) {
                       }
                     }
                   } catch {
-                    process.stdout.write('failed to parse error response\n');
+                    process.stdout.write('failed to parse console error response\n');
                   }
-                  resolve();
+                  checkDone();
                 });
               });
-              req2.on('error', () => { process.stdout.write('failed to fetch errors\n'); resolve(); });
-              req2.on('timeout', () => { req2.destroy(); process.stdout.write('timeout fetching errors\n'); resolve(); });
+              req2.on('error', () => { process.stdout.write('failed to fetch console errors\n'); checkDone(); });
+              req2.on('timeout', () => { req2.destroy(); process.stdout.write('timeout fetching console errors\n'); checkDone(); });
+
+              // Fetch app errors
+              const req3 = http.get({
+                hostname: '127.0.0.1', port,
+                path: '/api/app-errors', timeout: 500,
+              }, (res3) => {
+                let body3 = '';
+                res3.on('data', (d) => body3 += d);
+                res3.on('end', () => {
+                  try {
+                    const data = JSON.parse(body3);
+                    const errs = data.errors || [];
+                    if (!errs.length) {
+                      process.stdout.write('no app errors captured\n');
+                    } else {
+                      process.stdout.write('\napp errors (' + errs.length + '):\n');
+                      for (const e of errs) {
+                        process.stdout.write(`  [${e.type || 'app-error'}] ${e.message || ''}${e.command ? ' (cmd: ' + e.command + ')' : ''}${e.exitCode !== undefined ? ' exit: ' + e.exitCode : ''}\n`);
+                      }
+                    }
+                  } catch {
+                    process.stdout.write('failed to parse app error response\n');
+                  }
+                  checkDone();
+                });
+              });
+              req3.on('error', () => { checkDone(); });
+              req3.on('timeout', () => { req3.destroy(); checkDone(); });
             } else {
               tryNext();
             }
@@ -712,6 +743,54 @@ async function main() {
   }
   const root = findRoot(process.cwd());
   if (!root) { process.stderr.write('no .lex folder found - initialize lex first\n'); process.exit(1); }
+
+  if (cmd === 'run' && args.length) {
+    const { spawn } = require('child_process');
+    const http = require('node:http');
+    const command = args.join(' ');
+    process.stdout.write('lex run: ' + command + '\n');
+
+    const child = spawn(command, { shell: true, cwd: root, stdio: ['inherit', 'pipe', 'pipe'] });
+    let stderrBuf = '';
+    child.stdout.on('data', (d) => process.stdout.write(d));
+    child.stderr.on('data', (d) => {
+      stderrBuf += d.toString();
+      process.stderr.write(d);
+    });
+
+    function sendErrors(errors) {
+      let ports = [4747, 4748, 4749, 4750, 4751, 4752, 4753, 4754, 4755];
+      try {
+        const info = JSON.parse(fs.readFileSync(path.join(root, '.lex', 'server.json'), 'utf8'));
+        if (info.port) ports = [info.port, ...ports.filter(p => p !== info.port)];
+      } catch {}
+      for (const port of ports) {
+        const req = http.request({
+          hostname: '127.0.0.1', port, path: '/api/app-errors',
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          timeout: 500,
+        }, (res) => { res.resume(); });
+        req.on('error', () => {});
+        req.on('timeout', () => req.destroy());
+        req.write(JSON.stringify({ errors }));
+        req.end();
+        break;
+      }
+    }
+
+    child.on('close', (code) => {
+      const appErrors = [];
+      for (const line of stderrBuf.split('\n')) {
+        if (!line.trim()) continue;
+        if (/\b(error|exception|fatal|failed|panic|traceback)\b/i.test(line)) {
+          appErrors.push({ type: 'app-error', message: line.trim().substring(0, 500), command, exitCode: code });
+        }
+      }
+      if (appErrors.length) sendErrors(appErrors);
+      process.stdout.write('\nlex run: exited with code ' + code + (appErrors.length ? ' (' + appErrors.length + ' errors captured)' : '') + '\n');
+    });
+    return;
+  }
 
   if (cmd === 'watch') {
     const port = parseInt(args[0], 10) || 4747;
@@ -966,7 +1045,7 @@ async function main() {
     serveWithPortFallback(require('../lib/serve').createServer(root), port, port + 8, root);
     return;
   } else {
-    process.stderr.write('usage: lex <init|guard|check|tokens|status|diff|refs|refresh|search|symbols|links|docs|grep|recent|errors|memory|audit|patch|ls|read|write|rm|mv|stat|undo|snapshot|update|watch|serve|hook-update>\n');
+    process.stderr.write('usage: lex <init|guard|check|tokens|status|diff|refs|refresh|search|symbols|links|docs|grep|recent|errors|memory|audit|patch|ls|read|write|rm|mv|stat|undo|snapshot|run|update|watch|serve|hook-update>\n');
     process.exit(1);
   }
 }

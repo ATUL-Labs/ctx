@@ -1,6 +1,6 @@
 # Skills
 
-16 skills, each a standalone `SKILL.md` that any agent can read. Each skill has a `HARD-GATE` - written answers required before proceeding. No gate, no code.
+24 skills, each a standalone `SKILL.md` that any agent can read. Each skill has a `HARD-GATE` - written answers required before proceeding. No gate, no code.
 
 ## Skill catalog
 
@@ -22,6 +22,14 @@
 | **context-health** | Init, maintenance | Manage `.lex/`, compress, prevent overflow |
 | **security** | Any code, any file | Always active - never expose secrets |
 | **database-architecture** | Designing schema | Right-size tables, read/write tradeoffs, no EAV |
+| **api-design** | Creating endpoints, API contracts | REST/GraphQL conventions, error format, versioning |
+| **performance** | Profiling, optimizing | Measure first, optimize hot paths, benchmark |
+| **refactoring** | Restructuring code | Safe transformations, tests as safety net |
+| **git-workflow** | Branching, merging, conflicts | Clean history, safe rebase, conflict resolution |
+| **error-handling** | Error paths, retry logic | Right layer, meaningful messages, no swallowing |
+| **logging** | Structured logging | Log levels, correlation IDs, what to log/not log |
+| **caching** | Cache layers, invalidation | TTL vs event-driven, cache key design, hit rate |
+| **accessibility** | UI accessibility, WCAG | Keyboard nav, screen reader, contrast, ARIA |
 
 ## Stack overlays
 

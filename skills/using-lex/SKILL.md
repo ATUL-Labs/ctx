@@ -290,6 +290,14 @@ Invoke these via your platform's skill tool when they apply. If no skill tool ex
 | subagent-dispatch | 2+ independent tasks | Tasks with no shared state |
 | finishing-branch | Implementation complete, tests pass | Before merge, PR, or cleanup |
 | context-health | Context growing large, session long | When approaching context limits |
+| api-design | Creating new endpoints or API contracts | "design API", "create endpoint", "REST", "GraphQL" |
+| performance | Profiling, benchmarking, optimizing | "slow", "optimize", "performance", "benchmark" |
+| refactoring | Restructuring code without behavior change | "refactor", "clean up", "simplify" |
+| git-workflow | Branching, merging, conflicts, history | "merge", "rebase", "conflict", "branch" |
+| error-handling | Designing error paths and retry logic | "error handling", "exceptions", "retry" |
+| logging | Adding structured logging | "logging", "log levels", "observability" |
+| caching | Adding cache layers, invalidation | "cache", "caching", "performance" |
+| accessibility | UI accessibility, WCAG compliance | "accessibility", "a11y", "WCAG", "keyboard" |
 
 ### Stack Overlays
 

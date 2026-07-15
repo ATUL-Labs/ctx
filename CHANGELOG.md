@@ -2,6 +2,22 @@
 
 All notable changes to lex. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.1.22] - 2026-07-15
+
+### Added
+- **8 new skills** - api-design, performance, refactoring, git-workflow,
+  error-handling, logging, caching, accessibility. Total: 24 skills.
+- **Schema data viewer** - "View Data" button on every schema card in the viewer.
+  Opens a modal with paginated table data (10 rows per page, prev/next buttons).
+  Supports SQLite (built-in), MySQL (via mysql CLI), and PostgreSQL (via psql CLI).
+  Auto-detects DB config from `.env` file.
+- **`lex run <command>`** - wraps app execution, captures stderr, detects errors,
+  and reports them to the lex server. Works with any command (npm test, php artisan
+  serve, python manage.py runserver, etc.).
+- **App errors endpoint** - `/api/app-errors` (GET/POST) for storing and retrieving
+  application errors. `lex errors` now shows both console errors AND app errors.
+- **Gateway `errors` command** - updated to fetch both console and app errors.
+
 ## [0.1.21] - 2026-07-15
 
 ### Fixed

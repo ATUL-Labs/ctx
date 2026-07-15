@@ -62,9 +62,10 @@ Do NOT grep the whole project and read 500-line files when one `lex search` give
 
 ## Skills
 
-15 skills available. Read `.lex/skills/<skill-name>/SKILL.md` when the task matches:
+24 skills available. Read `.lex/skills/<skill-name>/SKILL.md` when the task matches:
 brainstorming, planning, executing, tdd, debugging, docs-cache, verification,
 code-review, efficient-code, security, design-intelligence, database-architecture,
-subagent-dispatch, finishing-branch, context-health.
+subagent-dispatch, finishing-branch, context-health, api-design, performance,
+refactoring, git-workflow, error-handling, logging, caching, accessibility.
 
 Stack overlays exist for: php, rust, python, typescript, go.

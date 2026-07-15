@@ -513,6 +513,30 @@
   .schema-col-type { color: var(--dim); }
   .schema-col-fk { color: var(--accent); white-space: nowrap; }
 
+  .schema-card-actions { margin-top: 8px; display: flex; gap: 6px; }
+  .schema-data-btn {
+    font-family: var(--mono); font-size: 10px; padding: 3px 8px;
+    border: 1px solid var(--panel-border); border-radius: 4px;
+    background: transparent; color: var(--accent); cursor: pointer;
+  }
+  .schema-data-btn:hover { background: rgba(var(--accent-rgb), 0.1); }
+
+  .data-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+  .data-modal-content { background: var(--bg); border: 1px solid var(--panel-border); border-radius: 10px; max-width: 90vw; max-height: 80vh; overflow: auto; padding: 20px; }
+  .data-modal-title { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .data-modal-close { background: transparent; border: none; color: var(--dim); font-size: 20px; cursor: pointer; }
+  .data-modal-close:hover { color: var(--ink); }
+  .data-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; }
+  .data-table th { text-align: left; padding: 6px 10px; color: var(--accent); border-bottom: 1px solid var(--panel-border); white-space: nowrap; }
+  .data-table td { padding: 4px 10px; color: var(--ink); border-bottom: 1px solid var(--panel-border); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .data-table tr:hover td { background: rgba(var(--accent-rgb), 0.05); }
+  .data-pagination { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-family: var(--mono); font-size: 11px; color: var(--dim); }
+  .data-pagination button { padding: 4px 10px; border: 1px solid var(--panel-border); border-radius: 4px; background: transparent; color: var(--ink); cursor: pointer; font-size: 11px; }
+  .data-pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .data-pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .data-error { color: #e74c3c; font-family: var(--mono); font-size: 12px; padding: 20px; text-align: center; }
+  .data-loading { color: var(--dim); font-family: var(--mono); font-size: 12px; padding: 20px; text-align: center; }
+
   .tabs { display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid var(--panel-border); }
   .tab-btn {
     background: transparent;
@@ -1466,6 +1490,15 @@ function renderSchemaCard(table) {
     }
     card.appendChild(row);
   });
+  var actions = textEl('div', null, 'schema-card-actions');
+  var btn = textEl('button', 'View Data', 'schema-data-btn');
+  btn.type = 'button';
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    openDataModal(table.name);
+  });
+  actions.appendChild(btn);
+  card.appendChild(actions);
   return card;
 }
 
@@ -1508,6 +1541,102 @@ function drawSchemaLines(tables) {
   });
 
   wrap.appendChild(svg);
+}
+
+function openDataModal(tableName) {
+  var existing = document.getElementById('data-modal');
+  if (existing) existing.remove();
+
+  var modal = textEl('div', null, 'data-modal');
+  modal.id = 'data-modal';
+  var content = textEl('div', null, 'data-modal-content');
+  var titleBar = textEl('div', null, 'data-modal-title');
+  titleBar.appendChild(textEl('span', 'Table: ' + tableName));
+  var closeBtn = textEl('button', '\u00d7', 'data-modal-close');
+  closeBtn.type = 'button';
+  closeBtn.addEventListener('click', function () { modal.remove(); });
+  titleBar.appendChild(closeBtn);
+  content.appendChild(titleBar);
+
+  var body = textEl('div', null, 'data-modal-body');
+  body.appendChild(textEl('div', 'Loading...', 'data-loading'));
+  content.appendChild(body);
+  modal.appendChild(content);
+  modal.addEventListener('click', function (e) { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+
+  var currentPage = 1;
+
+  function loadPage(page) {
+    currentPage = page;
+    clear(body);
+    body.appendChild(textEl('div', 'Loading...', 'data-loading'));
+    fetch('/api/schema/data?table=' + encodeURIComponent(tableName) + '&page=' + page)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        clear(body);
+        if (data.error) {
+          body.appendChild(textEl('div', data.error, 'data-error'));
+          return;
+        }
+        var rows = data.rows || [];
+        if (!rows.length) {
+          body.appendChild(textEl('div', 'No rows in this table', 'data-loading'));
+          return;
+        }
+        var cols = Object.keys(rows[0]);
+        var table = document.createElement('table');
+        table.className = 'data-table';
+        var thead = document.createElement('thead');
+        var tr = document.createElement('tr');
+        cols.forEach(function (c) {
+          var th = document.createElement('th');
+          th.textContent = c;
+          tr.appendChild(th);
+        });
+        thead.appendChild(tr);
+        table.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        rows.forEach(function (row) {
+          var tr2 = document.createElement('tr');
+          cols.forEach(function (c) {
+            var td = document.createElement('td');
+            var val = row[c];
+            if (val === null || val === undefined) td.textContent = 'NULL';
+            else if (typeof val === 'object') td.textContent = JSON.stringify(val).substring(0, 100);
+            else td.textContent = String(val).substring(0, 200);
+            td.title = val === null ? 'NULL' : String(val);
+            tr2.appendChild(td);
+          });
+          tbody.appendChild(tr2);
+        });
+        table.appendChild(tbody);
+        body.appendChild(table);
+
+        var pagination = textEl('div', null, 'data-pagination');
+        var prevBtn = textEl('button', '\u2190 Prev');
+        prevBtn.type = 'button';
+        prevBtn.disabled = page <= 1;
+        prevBtn.addEventListener('click', function () { loadPage(page - 1); });
+        pagination.appendChild(prevBtn);
+
+        var info = textEl('span', 'Page ' + page + ' of ' + (data.pages || 1) + ' (' + (data.total || 0) + ' rows)');
+        pagination.appendChild(info);
+
+        var nextBtn = textEl('button', 'Next \u2192');
+        nextBtn.type = 'button';
+        nextBtn.disabled = page >= (data.pages || 1);
+        nextBtn.addEventListener('click', function () { loadPage(page + 1); });
+        pagination.appendChild(nextBtn);
+        body.appendChild(pagination);
+      })
+      .catch(function (err) {
+        clear(body);
+        body.appendChild(textEl('div', 'Failed to load: ' + err.message, 'data-error'));
+      });
+  }
+
+  loadPage(1);
 }
 
 function renderSchema(tables, filterQuery) {
